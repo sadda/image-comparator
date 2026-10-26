@@ -14,6 +14,11 @@ ANS_UNK = ""
 class MatchingRules(Protocol):
     # Columns used for toggling: (column in answers, column in metadata)
     toggle_columns: dict[str, tuple[str, str]]
+    # Column used for jumping to the next group and the label of its button
+    next_column: str
+    next_label: str
+
+    def __init__(self, answers: pd.DataFrame) -> None: ...
 
     def answer_exists(self, idx: int) -> bool: ...
 
@@ -23,11 +28,12 @@ class MatchingRules(Protocol):
 class QueryQueryRules:
     """Query encounters are matched with each other. "Same" answers merge encounters into clusters."""
 
-    # Columns used for toggling: (column in answers, column in metadata)
     toggle_columns = {
         "l": ("encounter1", "encounter_id"),
         "r": ("encounter2", "encounter_id"),
     }
+    next_column = "matching_part"
+    next_label = "Next body part"
 
     def __init__(self, answers: pd.DataFrame) -> None:
         self.answers = answers
@@ -84,11 +90,12 @@ class QueryQueryRules:
 class QueryDatabaseRules:
     """Query encounters are matched with database identities. Each encounter has at most one identity."""
 
-    # Columns used for toggling: (column in answers, column in metadata)
     toggle_columns = {
         "l": ("encounter1", "encounter_id"),
         "r": ("identity2", "identity"),
     }
+    next_column = "encounter1"
+    next_label = "Next encounter"
 
     def __init__(self, answers: pd.DataFrame) -> None:
         self.answers = answers

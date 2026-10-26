@@ -35,6 +35,14 @@ class App:
         self.n_encounters = self.dataset.query.metadata["encounter_id"].nunique()
         self.n_identities = self.dataset.query.metadata["identity"].nunique()
 
+        # Select the rules for skipping and navigation
+        assert self.dataset.database is not None
+        self.rules_cls: type[MatchingRules]
+        if self.dataset.query.metadata.equals(self.dataset.database.metadata):
+            self.rules_cls = QueryQueryRules
+        else:
+            self.rules_cls = QueryDatabaseRules
+
         # Build UI
         self.idx = 0
         self.increase = True
@@ -89,7 +97,7 @@ class App:
             ("Unknown (E)", "e", self.on_unknown, 0, 2),
             ("Previous (A)", "a", self.on_prev, 1, 0),
             ("Next (S)", "s", self.on_next, 1, 1),
-            ("Next body part", None, self.next_body_part, 1, 2),
+            (self.rules_cls.next_label, None, self.next_group, 1, 2),
             ("Toggle heads left (R)", "r", self.on_toggle_left, 2, 0),
             ("Toggle heads right (F)", "f", self.on_toggle_right, 2, 1),
             ("Reset (V)", "v", self.on_reset, 2, 2),
@@ -224,12 +232,13 @@ class App:
         self._show_image(img2, "r")
         self._reset_i_lr()
 
-    def next_body_part(self) -> None:
+    def next_group(self) -> None:
         self.skip_filled = True
-        unique_parts = self.answers["matching_part"].unique()
-        i = np.where(self.answers.iloc[self.idx]["matching_part"] == unique_parts)[0][0]
-        i = np.mod(i + 1, len(unique_parts))
-        self.idx = np.where(unique_parts[i] == self.answers["matching_part"])[0][0] - 1
+        column = self.rules.next_column
+        unique_values = self.answers[column].unique()
+        i = np.where(self.answers.iloc[self.idx][column] == unique_values)[0][0]
+        i = np.mod(i + 1, len(unique_values))
+        self.idx = np.where(unique_values[i] == self.answers[column])[0][0] - 1
         self.next()
 
     def _reset_i_lr(self) -> None:
@@ -268,12 +277,7 @@ class App:
             self._update_i_lr(len(index), position)
 
     def _initialize_skipping(self):
-        self.rules: MatchingRules
-        assert self.dataset.query is not None and self.dataset.database is not None
-        if self.dataset.query.metadata.equals(self.dataset.database.metadata):
-            self.rules = QueryQueryRules(self.answers)
-        else:
-            self.rules = QueryDatabaseRules(self.answers)
+        self.rules = self.rules_cls(self.answers)
 
     def _update_answer(self, answer_new: str) -> None:
         answer_old = self.answers.loc[self.idx, "answer"]
@@ -366,6 +370,8 @@ class App:
         self._show_image(img2, "r")
         self._update_encounter_labels()
 
+        # TODO: after the first displayed row, answered rows are shown again when moving forward.
+        # In a resumed session, one unanswered row forces the user to go through all answered rows again.
         self.skip_filled = False
         self._set_text()
         self._reset_i_lr()
