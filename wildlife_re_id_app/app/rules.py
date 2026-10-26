@@ -1,3 +1,5 @@
+from typing import Protocol
+
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -7,6 +9,15 @@ from .utils import convert_identity
 ANS_POS = "same"
 ANS_NEG = "different"
 ANS_UNK = ""
+
+
+class MatchingRules(Protocol):
+    # Columns used for toggling: (column in answers, column in metadata)
+    toggle_columns: dict[str, tuple[str, str]]
+
+    def answer_exists(self, idx: int) -> bool: ...
+
+    def update(self, idx: int, answer_old: str, answer_new: str) -> str: ...
 
 
 class QueryQueryRules:
@@ -29,9 +40,9 @@ class QueryQueryRules:
         self.G_same = nx.Graph()
         self.G_same.add_nodes_from(nodes.tolist())
         self.G_same.add_edges_from(edges_same)
-        self.check()
+        self._check()
 
-    def check(self) -> None:
+    def _check(self) -> None:
         if not nx.is_forest(self.G_same):
             raise ValueError("G_same must not have any cycles")
         mask_diff = self.answers["answer"] == ANS_NEG
@@ -81,7 +92,7 @@ class QueryDatabaseRules:
 
     def __init__(self, answers: pd.DataFrame) -> None:
         self.answers = answers
-        self.check()
+        self._check()
 
     def _identified_as(self, encounter: str, exclude_idx: int | None = None) -> set[str]:
         mask = (self.answers["encounter1"] == encounter) & (self.answers["answer"] == ANS_POS)
@@ -89,7 +100,7 @@ class QueryDatabaseRules:
             mask &= self.answers.index != exclude_idx
         return set(self.answers.loc[mask, "identity2"])
 
-    def check(self) -> None:
+    def _check(self) -> None:
         for encounter in self.answers["encounter1"].unique():
             identities = self._identified_as(encounter)
             if len(identities) > 1:

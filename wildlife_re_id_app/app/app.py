@@ -10,7 +10,7 @@ import pandas as pd
 from PIL import Image, ImageTk
 
 from ..datasets import WildlifeDataset
-from .rules import ANS_NEG, ANS_POS, ANS_UNK, QueryDatabaseRules, QueryQueryRules
+from .rules import ANS_NEG, ANS_POS, ANS_UNK, MatchingRules, QueryDatabaseRules, QueryQueryRules
 
 DATA_CSV = "verification_data.csv"
 ANS_CSV = "answers.csv"
@@ -268,6 +268,7 @@ class App:
             self._update_i_lr(len(index), position)
 
     def _initialize_skipping(self):
+        self.rules: MatchingRules
         assert self.dataset.query is not None and self.dataset.database is not None
         if self.dataset.query.metadata.equals(self.dataset.database.metadata):
             self.rules = QueryQueryRules(self.answers)
