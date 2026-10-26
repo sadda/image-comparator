@@ -35,7 +35,7 @@ We provide two ways of installation. Both are for Windows only. If you need to u
   The line in the terminal should now start with `(venv)`.
 - Run in terminal
   ```
-  pip install -r requirements.txt
+  pip install -e .
   ```
   This will start installing the required Python packages. This operation should end with a message indicating that many packages were installed.
 
