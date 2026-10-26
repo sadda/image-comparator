@@ -39,7 +39,6 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 Close the terminal and open a new one. Then run the following command, which is the same for all systems.
 
-**Windows, Mac and Linux**
 ```
 uv tool install git+https://github.com/sadda/wildlife-app
 ```
