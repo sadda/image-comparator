@@ -1,7 +1,4 @@
-import os
-
 import pandas as pd
-import requests
 
 
 def convert_identity(answers: pd.DataFrame, col_identity: str, col_encounter: str | None = None) -> pd.Series:
@@ -16,13 +13,3 @@ def convert_identity(answers: pd.DataFrame, col_identity: str, col_encounter: st
     identity = answers[col_identity].copy().astype(str)
     identity[mask] = "unknown" + "_" + answers.loc[mask, col_encounter].astype(str)
     return identity
-
-
-def download_file(url: str, output_path: str) -> None:
-    r = requests.get(url, allow_redirects=True)
-    r.raise_for_status()
-    output_dir = os.path.dirname(output_path)
-    if output_dir != "":
-        os.makedirs(output_dir, exist_ok=True)
-    with open(output_path, "wb") as f:
-        f.write(r.content)

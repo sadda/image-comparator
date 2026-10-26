@@ -1,9 +1,11 @@
 import ast
 import os
+import tempfile
+import zipfile
 
 import pandas as pd
 import wildlife_datasets
-from animal_re_id.datasets import TurtlewatchEgypt_Citizen, TurtlewatchEgypt_Master
+from animal_re_id.datasets import TurtlesFromMetadata, TurtlewatchEgypt_Citizen, TurtlewatchEgypt_Master
 from wildlife_datasets.datasets import WildlifeDataset as WD
 
 from . import utils
@@ -93,5 +95,40 @@ class TurtlewatchEgypt(WildlifeDataset):
         return os.path.exists(file_name)
 
     def load(self) -> None:
-        self.query = TurtlewatchEgypt_Citizen(self.root_citizen).wildlife_dataset
-        self.database = TurtlewatchEgypt_Master(self.root_heads, self.root_flippers_f, self.root_flippers_r, self.file_name_individuals).wildlife_dataset
+        dataset_kwargs_citizen = {"load_label": False}
+        dataset_kwargs_master = {"load_label": False, "check_files": False, "img_load": "bbox"}
+
+        self.query = TurtlewatchEgypt_Citizen(self.root_citizen, dataset_kwargs=dataset_kwargs_citizen).wildlife_dataset
+        self.database = TurtlewatchEgypt_Master(
+            self.root_heads,
+            self.root_flippers_f,
+            self.root_flippers_r,
+            self.file_name_individuals,
+            dataset_kwargs=dataset_kwargs_master,
+        ).wildlife_dataset
+
+
+class Example(WildlifeDataset):
+    def __init__(self, root: str, url: str) -> None:
+        self.root = root
+        self.url = url
+        self.root_query = os.path.join(root, "query")
+        self.root_database = os.path.join(root, "database")
+
+    def download_dataset(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_name = os.path.join(tmpdir, "data.zip")
+            utils.download_file(self.url, file_name)
+            with zipfile.ZipFile(file_name) as f:
+                f.extractall(self.root)
+
+    def is_downloaded(self) -> bool:
+        file_name_query = os.path.join(self.root_query, "metadata.csv")
+        file_name_database = os.path.join(self.root_database, "metadata.csv")
+        return os.path.exists(file_name_query) and os.path.exists(file_name_database)
+
+    def load(self) -> None:
+        dataset_kwargs = {"load_label": False}
+
+        self.query = TurtlesFromMetadata(self.root_query, dataset_kwargs=dataset_kwargs).wildlife_dataset
+        self.database = TurtlesFromMetadata(self.root_database, dataset_kwargs=dataset_kwargs).wildlife_dataset
