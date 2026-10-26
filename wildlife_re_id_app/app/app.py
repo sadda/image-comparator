@@ -32,8 +32,6 @@ class App:
         # Load the dataset
         self.dataset.load()
         assert self.dataset.query is not None
-        self.n_encounters = self.dataset.query.metadata["encounter_id"].nunique()
-        self.n_identities = self.dataset.query.metadata["identity"].nunique()
 
         # Select the rules for skipping and navigation
         assert self.dataset.database is not None
@@ -188,8 +186,8 @@ class App:
         # TODO: add more information?
         self.text_box.config(state="normal")
         self.text_box.delete("1.0", "end")
-        self.text_box.insert("1.0", f"DATASET: {self.n_encounters} ENCOUNTERS, {self.n_identities} UNIQUE IDENTITIES.\n\n")
-        for line in self.rules.progress():
+        assert self.dataset.query is not None and self.dataset.database is not None
+        for line in self.rules.progress(self.dataset.query.metadata, self.dataset.database.metadata):
             self.text_box.insert("end", f"{line}\n")
         self.text_box.config(state="disabled")
 

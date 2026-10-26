@@ -24,7 +24,7 @@ class MatchingRules(Protocol):
 
     def update(self, idx: int, answer_old: str, answer_new: str) -> str: ...
 
-    def progress(self) -> list[str]: ...
+    def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]: ...
 
 
 class QueryQueryRules:
@@ -88,8 +88,10 @@ class QueryQueryRules:
             self.G_same.remove_edge(a, b)
         return answer_new
 
-    def progress(self) -> list[str]:
-        lines = []
+    def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]:
+        n_encounters = query["encounter_id"].nunique()
+        n_identities = query.loc[query["identity"] != "unknown", "identity"].nunique()
+        lines = [f"DATASET: {n_encounters} ENCOUNTERS, {n_identities} KNOWN IDENTITIES.", ""]
         for matching_part, answers_part in self.answers.groupby("matching_part"):
             n = len(answers_part)
             n_answered = answers_part["answer"].notnull().sum()
@@ -146,7 +148,9 @@ class QueryDatabaseRules:
                 return ANS_UNK
         return answer_new
 
-    def progress(self) -> list[str]:
+    def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]:
+        n_encounters = query["encounter_id"].nunique()
+        n_identities = database["identity"].nunique()
         n_identified = 0
         n_new = 0
         n_open = 0
@@ -159,4 +163,8 @@ class QueryDatabaseRules:
             else:
                 n_open += 1
         n = n_identified + n_new + n_open
-        return [f"ENCOUNTERS ({n}): identified {n_identified}, new {n_new}, open {n_open}."]
+        return [
+            f"QUERY: {n_encounters} ENCOUNTERS. DATABASE: {n_identities} IDENTITIES.",
+            "",
+            f"ENCOUNTERS ({n}): identified {n_identified}, new {n_new}, open {n_open}.",
+        ]
