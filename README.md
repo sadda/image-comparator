@@ -16,37 +16,30 @@ We provide two ways of installation. Both are for Windows only. If you need to u
 
 ### Installation 2
 
-- Download [Python](https://www.python.org/ftp/python/3.13.2/python-3.13.2-amd64.exe) and install it. During the installation, check "Add python.exe to PATH".
-- Open Command Prompt (press the Windows key, type `cmd` and press enter). It is a text window where commands are typed. Run in it (type or paste it and press enter)
+- Open PowerShell (press the Windows key, type `powershell` and press enter). It is a text window where commands are typed. Run in it (type or paste it and press enter)
   ```
-  python -m venv wildlife-venv
+  powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
   ```
-- Run
+  This installs [uv](https://docs.astral.sh/uv/), a tool for installing Python apps. Close PowerShell afterwards.
+- Open a new PowerShell and run
   ```
-  wildlife-venv\Scripts\activate
+  uv tool install https://github.com/sadda/wildlife-app/archive/refs/heads/master.zip
   ```
-  The line should now start with `(wildlife-venv)`.
-- Run
-  ```
-  pip install https://github.com/sadda/wildlife-app/archive/refs/heads/master.zip
-  ```
-  This will install the app and the required Python packages. It should end with a message indicating that many packages were installed.
+  This will install Python, the app and the required Python packages.
 
 ## Updating the app
 
-For Installation 1, the whole process must be repeated. For Installation 2, open Command Prompt and run
+For Installation 1, the whole process must be repeated. For Installation 2, open PowerShell and run
 ```
-wildlife-venv\Scripts\activate
-pip install --force-reinstall https://github.com/sadda/wildlife-app/archive/refs/heads/master.zip
+uv tool install --reinstall --refresh https://github.com/sadda/wildlife-app/archive/refs/heads/master.zip
 ```
 
 ## Running the app
 
 For Installation 1, run the exe file.
 
-For Installation 2, create an empty folder for your project (such as `turtles_of_smsrc`). The dataset and your answers will be stored there. Open the folder in File Explorer, type `cmd` into the address bar and press enter. This opens Command Prompt in this folder. Run
+For Installation 2, create an empty folder for your project (such as `turtles_of_smsrc`). The dataset and your answers will be stored there. Open the folder in File Explorer, type `powershell` into the address bar and press enter. This opens PowerShell in this folder. Run
 ```
-%USERPROFILE%\wildlife-venv\Scripts\activate
 wildlife-app turtles_of_smsrc
 ```
 If you run a different project than TurtlesOfSMSRC, change the last keyword (such as `turtlewatch_egypt`). Always run the app from the same folder, otherwise it will not find your data and answers.
