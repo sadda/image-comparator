@@ -47,7 +47,7 @@ include = ["wildlife_re_id_app*"]
 wildlife_re_id_app = ["configs/*.json"]
 
 [tool.ruff]
-line-length = 120
+line-length = 250
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
