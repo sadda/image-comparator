@@ -6,34 +6,54 @@ This repo provides an app for validating whether two images depict the same indi
 
 ## Installation
 
-The installation is for Windows only. If you need to use the app on a different operating system, [contact us](mailto:wilddatasets@gmail.com).
+All commands below are run in a terminal, a text window where commands are typed. To open it:
+- Windows: press the Windows key, type `cmd` or `powershell` and press enter.
+- Mac: press Cmd+Space, type `terminal` and press enter.
+- Linux: press Ctrl+Alt+T.
 
-Open PowerShell (press the Windows key, type `powershell` and press enter) and run these commands one by one (paste each and press enter):
+Paste each command into the terminal and press enter. In case of problems, [contact us](mailto:wilddatasets@gmail.com).
+
+First, install Git and [uv](https://docs.astral.sh/uv/), a tool for installing Python apps.
+
+**Windows**
 ```
 winget install --id Git.Git -e
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
-Close PowerShell, open a new one and run
+
+**Mac**
+```
+xcode-select --install
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Linux** (Debian/Ubuntu)
+```
+sudo apt install git
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Then close the terminal, open a new one and run (the same on all systems)
 ```
 uv tool install git+https://github.com/sadda/wildlife-app
 ```
 
 ## Updating the app
 
-Open PowerShell and run
+Open a terminal and run
 ```
 uv tool install --reinstall git+https://github.com/sadda/wildlife-app
 ```
 
 ## Running the app
 
-The app stores the dataset and your answers in the folder where it is started. Therefore, first create a folder for your project and move into it. The first time, open PowerShell and run
+The app stores the dataset and your answers in the folder where it is started. Therefore, first create a folder for your project and move into it. The first time, open a terminal and run
 ```
 mkdir turtles_of_smsrc
 cd turtles_of_smsrc
 wildlife-app turtles_of_smsrc
 ```
-Next time, open PowerShell and run only
+Next time, open a terminal and run only
 ```
 cd turtles_of_smsrc
 wildlife-app turtles_of_smsrc
