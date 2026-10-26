@@ -88,14 +88,32 @@ class QueryQueryRules:
             self.G_same.remove_edge(a, b)
         return answer_new
 
+    def _decided(self) -> pd.Series:
+        # Same as answer_exists for all rows, but computes the components and "different" pairs only once
+        component = {}
+        for i, nodes in enumerate(nx.connected_components(self.G_same)):
+            for node in nodes:
+                component[node] = i
+        component1 = self.identity1.map(component)
+        component2 = self.identity2.map(component)
+
+        mask_diff = self.answers["answer"] == ANS_NEG
+        pairs_diff = set(zip(component1[mask_diff], component2[mask_diff]))
+        pairs_diff |= {(b, a) for a, b in pairs_diff}
+
+        same_component = component1 == component2
+        diff_component = pd.Series([pair in pairs_diff for pair in zip(component1, component2)], index=self.answers.index)
+        return same_component | diff_component
+
     def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]:
         n_encounters = query["encounter_id"].nunique()
         n_identities = query.loc[query["identity"] != "unknown", "identity"].nunique()
+        decided = self._decided()
         lines = [f"DATASET: {n_encounters} ENCOUNTERS, {n_identities} KNOWN IDENTITIES.", ""]
         for matching_part, answers_part in self.answers.groupby("matching_part"):
             n = len(answers_part)
             n_answered = answers_part["answer"].notnull().sum()
-            n_decided = sum(self.answer_exists(idx) for idx in answers_part.index)
+            n_decided = decided[answers_part.index].sum()
             lines.append(f"{str(matching_part).upper()} ({n}): answered {n_answered}, decided {n_decided}.")
         return lines
 
@@ -121,8 +139,9 @@ class QueryDatabaseRules:
         return set(self.answers.loc[mask, "identity2"])
 
     def _check(self) -> None:
-        for encounter in self.answers["encounter1"].unique():
-            identities = self._identified_as(encounter)
+        answers_same = self.answers[self.answers["answer"] == ANS_POS]
+        for encounter, answers_encounter in answers_same.groupby("encounter1"):
+            identities = set(answers_encounter["identity2"])
             if len(identities) > 1:
                 raise ValueError(f"Encounter {encounter} is identified as multiple identities: {identities}.")
 
@@ -151,18 +170,19 @@ class QueryDatabaseRules:
     def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]:
         n_encounters = query["encounter_id"].nunique()
         n_identities = database["identity"].nunique()
-        n_identified = 0
-        n_new = 0
-        n_open = 0
-        for encounter, answers_encounter in self.answers.groupby("encounter1"):
-            identities_diff = answers_encounter.loc[answers_encounter["answer"] == ANS_NEG, "identity2"]
-            if self._identified_as(encounter):
-                n_identified += 1
-            elif set(answers_encounter["identity2"]) == set(identities_diff):
-                n_new += 1
-            else:
-                n_open += 1
-        n = n_identified + n_new + n_open
+        # Number of candidate identities and of identities answered as different for each encounter
+        pairs = self.answers[["encounter1", "identity2"]].drop_duplicates()
+        pairs_diff = self.answers.loc[self.answers["answer"] == ANS_NEG, ["encounter1", "identity2"]].drop_duplicates()
+        n_candidates = pairs.groupby("encounter1").size()
+        n_diff = pairs_diff.groupby("encounter1").size().reindex(n_candidates.index, fill_value=0)
+
+        encounters_same = self.answers.loc[self.answers["answer"] == ANS_POS, "encounter1"]
+        identified = n_candidates.index.isin(encounters_same)
+        new = ~identified & (n_diff == n_candidates).to_numpy()
+        n = len(n_candidates)
+        n_identified = identified.sum()
+        n_new = new.sum()
+        n_open = n - n_identified - n_new
         return [
             f"QUERY: {n_encounters} ENCOUNTERS. DATABASE: {n_identities} IDENTITIES.",
             "",
