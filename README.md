@@ -13,7 +13,9 @@ All commands below are run in a terminal, a text window where commands are typed
 
 Paste each command into the terminal and press enter. In case of problems, [contact us](mailto:wilddatasets@gmail.com).
 
-First, install Git and [uv](https://docs.astral.sh/uv/), a tool for installing Python apps.
+### Step 1: Install Git and uv
+
+[uv](https://docs.astral.sh/uv/) is a tool for installing Python apps. Run the commands for your system.
 
 **Windows**
 ```
@@ -33,7 +35,11 @@ sudo apt install git
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Then close the terminal, open a new one and run (the same on all systems)
+### Step 2: Install the app
+
+Close the terminal and open a new one. Then run the following command, which is the same for all systems.
+
+**Windows, Mac and Linux**
 ```
 uv tool install git+https://github.com/sadda/wildlife-app
 ```
