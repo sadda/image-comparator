@@ -6,15 +6,7 @@ This repo provides an app for validating whether two images depict the same indi
 
 ## Installation
 
-We provide two ways of installation. Both are for Windows only. If you need to use the app on a different operating system, [contact us](mailto:wilddatasets@gmail.com). The first one is simpler but requires significantly more internet bandwidth.
-
-### Installation 1
-
-- Download the [zip file](https://1drv.ms/u/c/8621a316a2cb40fa/IQBqMmLdqfzsRqTgyCWCzIHVAd969AvuAbk2FRJtETXhqHU?e=b37zRi).
-- Extract the downloaded zip file.
-- Go to the `config` folder inside the extracted folder and rename your project config file (such as `turtles_of_smsrc.json`) into `config.json`.
-
-### Installation 2
+The installation is for Windows only. If you need to use the app on a different operating system, [contact us](mailto:wilddatasets@gmail.com).
 
 Open PowerShell (press the Windows key, type `powershell` and press enter) and run these commands one by one (paste each and press enter):
 ```
@@ -28,20 +20,25 @@ uv tool install git+https://github.com/sadda/wildlife-app
 
 ## Updating the app
 
-For Installation 1, the whole process must be repeated. For Installation 2, open PowerShell and run
+Open PowerShell and run
 ```
 uv tool install --reinstall git+https://github.com/sadda/wildlife-app
 ```
 
 ## Running the app
 
-For Installation 1, run the exe file.
-
-For Installation 2, create an empty folder for your project (such as `turtles_of_smsrc`). The dataset and your answers will be stored there. Open the folder in File Explorer, type `powershell` into the address bar and press enter. This opens PowerShell in this folder. Run
+The app stores the dataset and your answers in the folder where it is started. Therefore, first create a folder for your project and move into it. The first time, open PowerShell and run
 ```
+mkdir turtles_of_smsrc
+cd turtles_of_smsrc
 wildlife-app turtles_of_smsrc
 ```
-If you run a different project than TurtlesOfSMSRC, change the last keyword (such as `turtlewatch_egypt`). Always run the app from the same folder, otherwise it will not find your data and answers.
+Next time, open PowerShell and run only
+```
+cd turtles_of_smsrc
+wildlife-app turtles_of_smsrc
+```
+If you run a different project than TurtlesOfSMSRC, change the project name (such as `turtlewatch_egypt`). Always run the app from the same folder, otherwise it will not find your data and answers.
 
 When the app starts for the first time, it will begin downloading the dataset, which may take half an hour. For TurtlewatchEgypt, some files cannot be downloaded and must be copied into the `data` subfolder manually. The app tells you which ones are missing.
 
