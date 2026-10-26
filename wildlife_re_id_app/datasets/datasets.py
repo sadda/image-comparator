@@ -6,7 +6,7 @@ import wildlife_datasets
 from wildlife_datasets.datasets import WildlifeDataset as WD
 
 from . import utils
-from .datasets_animal_re_id import TurtlewatchEgypt_Citizen, TurtlewatchEgypt_Master
+from animal_re_id.datasets import TurtlewatchEgypt_Citizen, TurtlewatchEgypt_Master
 
 
 class WildlifeDataset:
@@ -117,16 +117,7 @@ class TurtlewatchEgypt(WildlifeDataset):
         return (self.segmentation_urls, [file_name])
 
     def load(self) -> None:
-        dataset_kwargs_citizen = {"load_label": False}
-        dataset_kwargs_master = {"load_label": False, "check_files": False, "img_load": "bbox"}
-
-        database_query_matching = True
-        self.query = TurtlewatchEgypt_Citizen(self.root_citizen, database_query_matching, dataset_kwargs=dataset_kwargs_citizen).dataset
+        self.query = TurtlewatchEgypt_Citizen(self.root_citizen).wildlife_dataset
         self.database = TurtlewatchEgypt_Master(
-            self.root_heads,
-            self.root_flippers_f,
-            self.root_flippers_r,
-            database_query_matching,
-            self.file_name_individuals,
-            dataset_kwargs=dataset_kwargs_master
-        ).dataset
+            self.root_heads, self.root_flippers_f, self.root_flippers_r, self.file_name_individuals
+        ).wildlife_dataset
