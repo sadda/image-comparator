@@ -30,8 +30,8 @@ dependencies = [
     "Pillow",
     "requests",
     "networkx",
-    "wildlife-datasets @ git+https://github.com/WildlifeDatasets/wildlife-datasets.git",
-    "animal-re-id @ git+https://github.com/sadda/turtle_re_id.git",
+    "wildlife-datasets @ https://github.com/WildlifeDatasets/wildlife-datasets/archive/refs/heads/main.zip",
+    "animal-re-id @ https://github.com/sadda/turtle_re_id/archive/refs/heads/master.zip",
 ]
 
 [project.urls]
