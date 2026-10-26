@@ -355,7 +355,8 @@ class App:
             self.next_prev()
             return
 
-        text = f"{self.name} image {self.idx + 1}/{len(self.answers)}"
+        similarity = self.answers.iloc[self.idx]["similarity_orig"]
+        text = f"{self.name} image {self.idx + 1}/{len(self.answers)} - similarity {similarity:.0f}"
         answer = self.answers.iloc[self.idx]["answer"]
         if not pd.isnull(answer):
             text = f"{text} - {answer.upper()}"
