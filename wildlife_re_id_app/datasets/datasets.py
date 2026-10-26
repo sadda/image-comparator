@@ -91,6 +91,12 @@ class TurtlewatchEgypt(WildlifeDataset):
         self.root_flippers_f = root_flippers_f
         self.root_flippers_r = root_flippers_r
 
+        manual_paths = [file_name_individuals, file_name_downloads, root_heads, root_flippers_f, root_flippers_r]
+        missing = [path for path in manual_paths if not os.path.exists(path)]
+        if missing:
+            missing_str = "\n".join(os.path.abspath(path) for path in missing)
+            raise FileNotFoundError(f"These files must be copied manually and are missing:\n{missing_str}")
+
     def download_dataset(self) -> None:
         data = pd.read_csv(self.file_name_downloads)
         self.dataset_wd_query.get_data(self.root_citizen, data=data, force=True)
