@@ -287,12 +287,6 @@ class App:
         else:
             return self.rules.answer_exists(self.idx) and self._answer_empty()
 
-    def next_prev(self) -> None:
-        if self.increase:
-            self.next()
-        else:
-            self.prev()
-
     def load_image_database(self, i: int | None = None) -> Image.Image:
         assert self.dataset.database is not None
         if i is None:
@@ -334,21 +328,25 @@ class App:
         self.encounter_var_r.set(f"Encounter: {row['encounter2']}")
 
     def load_row(self) -> None:
-        if not (0 <= self.idx < len(self.answers)):
-            if self.skip_filled:
-                messagebox.showinfo("Info", "All turtles were identified. Either delete some rows in answers.csv or the whole file.")
-            self.root.destroy()
-            return
+        # Move to the first row which should be shown. A loop and not recursion, which fails for long skips.
+        while True:
+            if not (0 <= self.idx < len(self.answers)):
+                if self.skip_filled:
+                    messagebox.showinfo("Info", "All turtles were identified. Either delete some rows in answers.csv or the whole file.")
+                self.root.destroy()
+                return
 
-        if self._skip_plotting():
-            self.next_prev()
-            return
+            if not self._skip_plotting():
+                img1, img2 = self.load_images()
+                if img1 is not None and img2 is not None:
+                    break
 
-        img1, img2 = self.load_images()
-
-        if img1 is None or img2 is None:
-            self.next_prev()
-            return
+            if self.increase:
+                self.idx += 1
+            elif self.idx > 0:
+                self.idx -= 1
+            else:
+                return
 
         similarity = self.answers.iloc[self.idx]["similarity_orig"]
         text = f"{self.name} image {self.idx + 1}/{len(self.answers)} - similarity {similarity:.0f}"
