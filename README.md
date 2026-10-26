@@ -16,46 +16,45 @@ We provide two ways of installation. Both are for Windows only. If you need to u
 
 ### Installation 2
 
-- Download [Python](https://www.python.org/ftp/python/3.13.2/python-3.13.2-amd64.exe), [Git](https://git-scm.com/install/windows) and [VS Code](https://code.visualstudio.com/download) and install them.
-- Run VS Code. All the remaining commands are to be performed in VS Code.
-- Open command palette ("View -> Command Palette"), type "Git: Clone" and add URL
+- Download [Python](https://www.python.org/ftp/python/3.13.2/python-3.13.2-amd64.exe) and install it. During the installation, check "Add python.exe to PATH".
+- Open Command Prompt (press the Windows key, type `cmd` and press enter). It is a text window where commands are typed. Run in it (type or paste it and press enter)
   ```
-  https://github.com/sadda/wildlife-app
+  python -m venv wildlife-venv
   ```
-  This will download the app.
-- The directory with the app should open automatically. If not, open it manually ("File -> Open Folder" and select where you downloaded it in the previous step).
-- Open terminal ("View -> Terminal" or keyboard shortcut Ctrl+`) - a text window where commands are typed. All commands below must be run in the same terminal window. Run in terminal (type or paste it into the terminal and press enter)
+- Run
   ```
-  python -m venv venv
+  wildlife-venv\Scripts\activate
   ```
-- Run in terminal
+  The line should now start with `(wildlife-venv)`.
+- Run
   ```
-  venv/scripts/activate
+  pip install https://github.com/sadda/wildlife-app/archive/refs/heads/master.zip
   ```
-  The line in the terminal should now start with `(venv)`.
-- Run in terminal
-  ```
-  pip install -e .
-  ```
-  This will start installing the required Python packages. This operation should end with a message indicating that many packages were installed.
+  This will install the app and the required Python packages. It should end with a message indicating that many packages were installed.
 
 ## Updating the app
 
-For Installation 1, the whole process must be repeated. For Installation 2, it is sufficient to click the "Synchronise Changes" in VS Code (two arrows forming a circle in the bottom-left part).
+For Installation 1, the whole process must be repeated. For Installation 2, open Command Prompt and run
+```
+wildlife-venv\Scripts\activate
+pip install --force-reinstall https://github.com/sadda/wildlife-app/archive/refs/heads/master.zip
+```
 
 ## Running the app
 
-For Installation 1, run the exe file. For Installation 2, open the terminal (see above) and run the following two commands:
+For Installation 1, run the exe file.
+
+For Installation 2, create an empty folder for your project (such as `turtles_of_smsrc`). The dataset and your answers will be stored there. Open the folder in File Explorer, type `cmd` into the address bar and press enter. This opens Command Prompt in this folder. Run
 ```
-venv/scripts/activate
+%USERPROFILE%\wildlife-venv\Scripts\activate
 wildlife-app turtles_of_smsrc
 ```
-If you run a different project than TurtlesOfSMSRC, you need to change the last keyword.
+If you run a different project than TurtlesOfSMSRC, change the last keyword (such as `turtlewatch_egypt`). Always run the app from the same folder, otherwise it will not find your data and answers.
 
-When the app starts for the first time, it will begin downloading the dataset, which may take half an hour.
+When the app starts for the first time, it will begin downloading the dataset, which may take half an hour. For TurtlewatchEgypt, some files cannot be downloaded and must be copied into the `data` subfolder manually. The app tells you which ones are missing.
 
 ## Using the app
 
-Using the app should be straightforward. Press Same (Q), Different (W) or Unknown (E) for validating whether the two shown turtles are the same. Use Next (A) and Previous (S) to move to the following images without giving an answer or to check the previous answer. You can also move to the next body part if the matching was performed across multiple body parts. It is highly recommended to use the keyboard shortcuts Q, W, E, A and S. The answers are saved to the file `answers.csv`.
+Using the app should be straightforward. Press Same (Q), Different (W) or Unknown (E) for validating whether the two shown turtles are the same. Use Previous (A) and Next (S) to move to the following images without giving an answer or to check the previous answer. You can also move to the next body part if the matching was performed across multiple body parts. It is highly recommended to use the keyboard shortcuts Q, W, E, A and S. The answers are saved to the file `answers.csv`.
 
 When a dataset is updated, it should be downloaded by the corresponding button. Similarly, when new predictions are available for verification, they can be automatically downloaded. The last button downloads segmentation masks, which are used to crop turtle heads and flippers.
