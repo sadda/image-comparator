@@ -5,19 +5,15 @@ from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import cast
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageTk
 
 from ..datasets import WildlifeDataset
-from .utils import convert_identity
+from .rules import ANS_NEG, ANS_POS, ANS_UNK, QueryDatabaseRules, QueryQueryRules
 
 DATA_CSV = "verification_data.csv"
 ANS_CSV = "answers.csv"
-ANS_POS = "same"
-ANS_NEG = "different"
-ANS_UNK = ""
 CANVAS_SIZE = 400
 
 
@@ -177,7 +173,7 @@ class App:
         self.plot_time = time.perf_counter()
 
     def _save_csv(self) -> None:
-        answers_save = self.answers.drop(["index1", "index2", "identity1_convert", "identity2_convert"], axis=1)
+        answers_save = self.answers.drop(["index1", "index2"], axis=1)
         answers_save.to_csv(ANS_CSV, index=False)
 
     def _set_text(self) -> None:
@@ -247,23 +243,21 @@ class App:
             self.i_r = (self.i_r + 1) % n
 
     def _toggle(self, position):
-        # TODO: "encounter1" and "encounter2" is required
         if position == "l":
-            col_encounter = "encounter1"
             dataset = self.dataset.query
             i = self.i_l
         elif position == "r":
-            col_encounter = "encounter2"
             dataset = self.dataset.database
             i = self.i_r
         else:
             raise ValueError("Position must be l or r.")
         assert dataset is not None
 
-        # TODO: do not hard-code heads and encounter_id
-        encounter = self.answers.iloc[self.idx][col_encounter]
+        # TODO: do not hard-code heads
+        col_answers, col_metadata = self.rules.toggle_columns[position]
+        value = self.answers.iloc[self.idx][col_answers]
         mask1 = dataset.metadata["label"] == "head"
-        mask2 = dataset.metadata["encounter_id"] == encounter
+        mask2 = dataset.metadata[col_metadata] == value
         metadata_reduced = dataset.metadata[mask1 & mask2]
         metadata_reduced = metadata_reduced.sort_values("score", ascending=False)
         index = dataset.metadata.index.get_indexer(metadata_reduced.index)
@@ -274,69 +268,18 @@ class App:
             self._update_i_lr(len(index), position)
 
     def _initialize_skipping(self):
-        self.answers["identity1_convert"] = convert_identity(self.answers, "identity1", "encounter1")
-        self.answers["identity2_convert"] = convert_identity(self.answers, "identity2", "encounter2")
-        self._graph_init()
-        self._graph_check()
-
-    @property
-    def mask_same(self):
-        return self.answers["answer"] == ANS_POS
-
-    @property
-    def mask_diff(self):
-        return self.answers["answer"] == ANS_NEG
+        assert self.dataset.query is not None and self.dataset.database is not None
+        if self.dataset.query.metadata.equals(self.dataset.database.metadata):
+            self.rules = QueryQueryRules(self.answers)
+        else:
+            self.rules = QueryDatabaseRules(self.answers)
 
     def _update_answer(self, answer_new: str) -> None:
-        # TODO: the whole logic will break if A-B same, B-C different, A-C different and the user changes B-C to same
         answer_old = self.answers.loc[self.idx, "answer"]
-        a = self.answers.iloc[self.idx]["identity1_convert"]
-        b = self.answers.iloc[self.idx]["identity2_convert"]
-        if answer_new == ANS_POS:
-            # To keep the forest structure (no cycles), add only if not connected, otherwise, change answer to ""
-            if not nx.has_path(self.G_same, a, b):
-                self.G_same.add_edge(a, b)
-            else:
-                answer_new = ANS_UNK
-        elif answer_old == ANS_POS:
-            self.G_same.remove_edge(a, b)
-        self.answers.loc[self.idx, "answer"] = answer_new
-
-    def _graph_init(self):
-        nodes = np.unique(self.answers["identity1_convert"].to_list() + self.answers["identity2_convert"].to_list())
-        edges_same = self.answers.loc[self.mask_same, ["identity1_convert", "identity2_convert"]].to_numpy()
-
-        self.G_same = nx.Graph()
-        self.G_same.add_nodes_from(nodes.tolist())
-        self.G_same.add_edges_from(edges_same.tolist())
-
-    def _graph_check(self):
-        if not nx.is_forest(self.G_same):
-            raise ValueError("G_same must not have any cycles")
-        for _, answer in self.answers[self.mask_diff].iterrows():
-            if nx.has_path(self.G_same, answer["identity1_convert"], answer["identity2_convert"]):
-                raise ValueError("Cluster contains both same and different.")
-
-    def _answer_exists(self) -> bool:
-        # Get the identities
-        a = self.answers.iloc[self.idx]["identity1_convert"]
-        b = self.answers.iloc[self.idx]["identity2_convert"]
-
-        # If the identites are connected by same, it is predicted
-        if nx.has_path(self.G_same, a, b):
-            return True
-
-        # Extract the components where the identities belong
-        comp_a = nx.node_connected_component(self.G_same, a)
-        comp_b = nx.node_connected_component(self.G_same, b)
-
-        # Check whether identities are connected by exactly one diff
-        diff_edges = self.answers.loc[self.mask_diff, ["identity1_convert", "identity2_convert"]].to_numpy()
-        for u, v in diff_edges:
-            if (u in comp_a and v in comp_b) or (v in comp_a and u in comp_b):
-                return True
-
-        return False
+        answer = self.rules.update(self.idx, answer_old, answer_new)
+        if answer != answer_new:
+            messagebox.showinfo("Info", "The answer contradicts the previous answers and was not accepted.")
+        self.answers.loc[self.idx, "answer"] = answer
 
     def _answer_empty(self) -> bool:
         answer = self.answers.iloc[self.idx]["answer"]
@@ -344,9 +287,9 @@ class App:
 
     def _skip_plotting(self) -> bool:
         if self.skip_filled:
-            return self._answer_exists() or not self._answer_empty()
+            return self.rules.answer_exists(self.idx) or not self._answer_empty()
         else:
-            return self._answer_exists() and self._answer_empty()
+            return self.rules.answer_exists(self.idx) and self._answer_empty()
 
     def next_prev(self) -> None:
         if self.increase:
