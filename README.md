@@ -48,7 +48,7 @@ For Installation 1, the whole process must be repeated. For Installation 2, it i
 For Installation 1, run the exe file. For Installation 2, open the terminal (see above) and run the following two commands:
 ```
 venv/scripts/activate
-python run.py turtles_of_smsrc
+wildlife-app turtles_of_smsrc
 ```
 If you run a different project than TurtlesOfSMSRC, you need to change the last keyword.
 
