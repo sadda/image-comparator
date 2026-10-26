@@ -189,15 +189,8 @@ class App:
         self.text_box.config(state="normal")
         self.text_box.delete("1.0", "end")
         self.text_box.insert("1.0", f"DATASET: {self.n_encounters} ENCOUNTERS, {self.n_identities} UNIQUE IDENTITIES.\n\n")
-        for matching_part, answers_subset in self.answers.groupby("matching_part"):
-            assert isinstance(matching_part, str)
-            name = matching_part.upper()
-            done = ~answers_subset["answer"].isnull()
-
-            n = len(answers_subset)
-            n_done = done.sum()
-
-            self.text_box.insert("end", f"{name} ({n}): done {n_done}.\n")
+        for line in self.rules.progress():
+            self.text_box.insert("end", f"{line}\n")
         self.text_box.config(state="disabled")
 
     def on_same(self, event=None) -> None:

@@ -24,6 +24,8 @@ class MatchingRules(Protocol):
 
     def update(self, idx: int, answer_old: str, answer_new: str) -> str: ...
 
+    def progress(self) -> list[str]: ...
+
 
 class QueryQueryRules:
     """Query encounters are matched with each other. "Same" answers merge encounters into clusters."""
@@ -86,6 +88,15 @@ class QueryQueryRules:
             self.G_same.remove_edge(a, b)
         return answer_new
 
+    def progress(self) -> list[str]:
+        lines = []
+        for matching_part, answers_part in self.answers.groupby("matching_part"):
+            n = len(answers_part)
+            n_answered = answers_part["answer"].notnull().sum()
+            n_decided = sum(self.answer_exists(idx) for idx in answers_part.index)
+            lines.append(f"{str(matching_part).upper()} ({n}): answered {n_answered}, decided {n_decided}.")
+        return lines
+
 
 class QueryDatabaseRules:
     """Query encounters are matched with database identities. Each encounter has at most one identity."""
@@ -134,3 +145,18 @@ class QueryDatabaseRules:
             if identities - {row["identity2"]}:
                 return ANS_UNK
         return answer_new
+
+    def progress(self) -> list[str]:
+        n_identified = 0
+        n_new = 0
+        n_open = 0
+        for encounter, answers_encounter in self.answers.groupby("encounter1"):
+            identities_diff = answers_encounter.loc[answers_encounter["answer"] == ANS_NEG, "identity2"]
+            if self._identified_as(encounter):
+                n_identified += 1
+            elif set(answers_encounter["identity2"]) == set(identities_diff):
+                n_new += 1
+            else:
+                n_open += 1
+        n = n_identified + n_new + n_open
+        return [f"ENCOUNTERS ({n}): identified {n_identified}, new {n_new}, open {n_open}."]
