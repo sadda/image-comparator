@@ -1,0 +1,9 @@
+{
+  "dataset": "TurtlewatchEgypt",
+  "file_name_individuals": "data/twe_individuals.csv",
+  "file_name_downloads": "data/citizen_files.csv",
+  "root_citizen": "data/citizen",
+  "root_heads": "data/PROFILES",
+  "root_flippers_f": "data/TWE_flipperprofiles_registered ind_LR_front",
+  "root_flippers_r": "data/TWE_flipperprofiles_registered ind_LR_rear"
+}

@@ -133,12 +133,8 @@ class App:
 
         self.encounter_var_l = tk.StringVar()
         self.encounter_var_r = tk.StringVar()
-        self.encounter_label_l = ttk.Entry(
-            self.img_frame, textvariable=self.encounter_var_l, state="readonly", justify="center"
-        )
-        self.encounter_label_r = ttk.Entry(
-            self.img_frame, textvariable=self.encounter_var_r, state="readonly", justify="center"
-        )
+        self.encounter_label_l = ttk.Entry(self.img_frame, textvariable=self.encounter_var_l, state="readonly", justify="center")
+        self.encounter_label_r = ttk.Entry(self.img_frame, textvariable=self.encounter_var_r, state="readonly", justify="center")
         self.encounter_label_l.grid(row=0, column=0, padx=5, sticky="ew")
         self.encounter_label_r.grid(row=0, column=1, padx=5, sticky="ew")
 
@@ -149,9 +145,7 @@ class App:
 
         # Counter frame
         self.counter_var = tk.StringVar()
-        self.counter_label = ttk.Label(
-            self.main_frame, textvariable=self.counter_var, font=("TkDefaultFont", 12, "bold")
-        )
+        self.counter_label = ttk.Label(self.main_frame, textvariable=self.counter_var, font=("TkDefaultFont", 12, "bold"))
         self.counter_label.pack(pady=(0, 10))
 
         # Bottom area
@@ -213,9 +207,7 @@ class App:
         # TODO: add more information?
         self.text_box.config(state="normal")
         self.text_box.delete("1.0", "end")
-        self.text_box.insert(
-            "1.0", f"DATASET: {self.n_encounters} ENCOUNTERS, {self.n_identities} UNIQUE IDENTITIES.\n\n"
-        )
+        self.text_box.insert("1.0", f"DATASET: {self.n_encounters} ENCOUNTERS, {self.n_identities} UNIQUE IDENTITIES.\n\n")
         for matching_part, answers_subset in self.answers.groupby("matching_part"):
             assert isinstance(matching_part, str)
             name = matching_part.upper()
@@ -258,7 +250,7 @@ class App:
         self._show_image(img1, "l")
         self._show_image(img2, "r")
         self._reset_i_lr()
-    
+
     def download_dataset(self, event=None) -> None:
         confirm = messagebox.askyesno(
             title="Download dataset",
@@ -277,9 +269,7 @@ class App:
 
     # TODO: handle if internet not connected
     def _download_files(self, paths: list[str], urls: list[str]) -> bool:
-        confirm = messagebox.askyesno(
-            title="Download", message="Download the file now? Do not close the app please. It may close automatically."
-        )
+        confirm = messagebox.askyesno(title="Download", message="Download the file now? Do not close the app please. It may close automatically.")
         replaced = False
         if confirm:
             for path, url in zip(paths, urls):
@@ -292,7 +282,7 @@ class App:
                     if not (os.path.exists(path) and filecmp.cmp(path, path_tmp, shallow=False)):
                         path_dir = os.path.dirname(path)
                         if path_dir != "":
-                            os.makedirs(path_dir, exist_ok=True) 
+                            os.makedirs(path_dir, exist_ok=True)
                         os.replace(path_tmp, path)
                         replaced = True
         self._reset_time()
@@ -356,7 +346,7 @@ class App:
         metadata_reduced = dataset.metadata[mask1 & mask2]
         metadata_reduced = metadata_reduced.sort_values("score", ascending=False)
         index = dataset.metadata.index.get_indexer(metadata_reduced.index)
-        
+
         if len(index) > 0:
             img = dataset[index[i]]
             self._show_image(img, position)
@@ -364,7 +354,7 @@ class App:
 
     def _initialize_skipping(self):
         self.answers["identity1_convert"] = convert_identity(self.answers, "identity1", "encounter1")
-        self.answers["identity2_convert"] = convert_identity(self.answers, "identity2", "encounter2")        
+        self.answers["identity2_convert"] = convert_identity(self.answers, "identity2", "encounter2")
         self._graph_init()
         self._graph_check()
 
@@ -410,7 +400,7 @@ class App:
         # Get the identities
         a = self.answers.iloc[self.idx]["identity1_convert"]
         b = self.answers.iloc[self.idx]["identity2_convert"]
-        
+
         # If the identites are connected by same, it is predicted
         if nx.has_path(self.G_same, a, b):
             return True
@@ -430,7 +420,7 @@ class App:
     def _answer_empty(self) -> bool:
         answer = self.answers.iloc[self.idx]["answer"]
         return pd.isnull(answer) or answer == ""
-    
+
     def _skip_plotting(self) -> bool:
         if self.skip_filled:
             return self._answer_exists() or not self._answer_empty()
@@ -486,9 +476,7 @@ class App:
     def load_row(self) -> None:
         if not (0 <= self.idx < len(self.answers)):
             if self.skip_filled:
-                messagebox.showinfo(
-                    "Info", "All turtles were identified. Either delete some rows in answers.csv or the whole file."
-                )
+                messagebox.showinfo("Info", "All turtles were identified. Either delete some rows in answers.csv or the whole file.")
             self.root.destroy()
             return
 

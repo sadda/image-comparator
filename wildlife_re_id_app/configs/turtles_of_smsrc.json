@@ -1,0 +1,5 @@
+{
+  "dataset": "TurtlesOfSMSRC",
+  "root": "data",
+  "matching_encounters_path": "data/matching_encounters.txt"
+}

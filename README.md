@@ -6,56 +6,69 @@ This repo provides an app for validating whether two images depict the same indi
 
 ## Installation
 
-We provide two ways of installation. Both are for Windows only. If you need to use the app on a different operating system, [contact us](mailto:wilddatasets@gmail.com). The first one is simpler but requires significantly more internet bandwidth.
+All commands below are run in a terminal, a text window where commands are typed. To open it:
+- Windows: press the Windows key, type `cmd` or `powershell` and press enter.
+- Mac: press Cmd+Space, type `terminal` and press enter.
+- Linux: press Ctrl+Alt+T.
 
-### Installation 1
+Paste each command into the terminal and press enter. In case of problems, [contact us](mailto:wilddatasets@gmail.com).
 
-- Download the [zip file](https://1drv.ms/u/c/8621a316a2cb40fa/IQBqMmLdqfzsRqTgyCWCzIHVAd969AvuAbk2FRJtETXhqHU?e=b37zRi).
-- Extract the downloaded zip file.
-- Go to the `config` folder inside the extracted folder and rename your project config file (such as `turtles_of_smsrc.json`) into `config.json`.
+### Step 1: Install Git and uv
 
-### Installation 2
+[uv](https://docs.astral.sh/uv/) is a tool for installing Python apps. Run the commands for your system.
 
-- Download [Python](https://www.python.org/ftp/python/3.13.2/python-3.13.2-amd64.exe), [Git](https://git-scm.com/install/windows) and [VS Code](https://code.visualstudio.com/download) and install them.
-- Run VS Code. All the remaining commands are to be performed in VS Code.
-- Open command palette ("View -> Command Palette"), type "Git: Clone" and add URL
-  ```
-  https://github.com/sadda/wildlife-app
-  ```
-  This will download the app.
-- The directory with the app should open automatically. If not, open it manually ("File -> Open Folder" and select where you downloaded it in the previous step).
-- Open terminal ("View -> Terminal" or keyboard shortcut Ctrl+`) - a text window where commands are typed. All commands below must be run in the same terminal window. Run in terminal (type or paste it into the terminal and press enter)
-  ```
-  python -m venv venv
-  ```
-- Run in terminal
-  ```
-  venv/scripts/activate
-  ```
-  The line in the terminal should now start with `(venv)`.
-- Run in terminal
-  ```
-  pip install -r requirements.txt
-  ```
-  This will start installing the required Python packages. This operation should end with a message indicating that many packages were installed.
+**Windows**
+```
+winget install --id Git.Git -e
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**Mac**
+```
+xcode-select --install
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Linux** (Debian/Ubuntu)
+```
+sudo apt install git
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### Step 2: Install the app
+
+Close the terminal and open a new one. Then run the following command, which is the same for all systems.
+
+```
+uv tool install git+https://github.com/sadda/wildlife-app
+```
 
 ## Updating the app
 
-For Installation 1, the whole process must be repeated. For Installation 2, it is sufficient to click the "Synchronise Changes" in VS Code (two arrows forming a circle in the bottom-left part).
+Open a terminal and run
+```
+uv tool install --reinstall git+https://github.com/sadda/wildlife-app
+```
 
 ## Running the app
 
-For Installation 1, run the exe file. For Installation 2, open the terminal (see above) and run the following two commands:
+The app stores the dataset and your answers in the folder where it is started. Therefore, first create a folder for your project and move into it. The first time, open a terminal and run
 ```
-venv/scripts/activate
-python run.py turtles_of_smsrc
+mkdir turtles_of_smsrc
+cd turtles_of_smsrc
+wildlife-app turtles_of_smsrc
 ```
-If you run a different project than TurtlesOfSMSRC, you need to change the last keyword.
+Next time, open a terminal and run only
+```
+cd turtles_of_smsrc
+wildlife-app turtles_of_smsrc
+```
+If you run a different project than TurtlesOfSMSRC, change the project name (such as `turtlewatch_egypt`). Always run the app from the same folder, otherwise it will not find your data and answers.
 
-When the app starts for the first time, it will begin downloading the dataset, which may take half an hour.
+When the app starts for the first time, it will begin downloading the dataset, which may take half an hour. For TurtlewatchEgypt, some files cannot be downloaded and must be copied into the `data` subfolder manually. The app tells you which ones are missing.
 
 ## Using the app
 
-Using the app should be straightforward. Press Same (Q), Different (W) or Unknown (E) for validating whether the two shown turtles are the same. Use Next (A) and Previous (S) to move to the following images without giving an answer or to check the previous answer. You can also move to the next body part if the matching was performed across multiple body parts. It is highly recommended to use the keyboard shortcuts Q, W, E, A and S. The answers are saved to the file `answers.csv`.
+Using the app should be straightforward. Press Same (Q), Different (W) or Unknown (E) for validating whether the two shown turtles are the same. Use Previous (A) and Next (S) to move to the following images without giving an answer or to check the previous answer. You can also move to the next body part if the matching was performed across multiple body parts. It is highly recommended to use the keyboard shortcuts Q, W, E, A and S. The answers are saved to the file `answers.csv`.
 
 When a dataset is updated, it should be downloaded by the corresponding button. Similarly, when new predictions are available for verification, they can be automatically downloaded. The last button downloads segmentation masks, which are used to crop turtle heads and flippers.
