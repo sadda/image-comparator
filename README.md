@@ -56,7 +56,7 @@ The app stores the dataset and your answers in the folder where it is started. T
 ```
 mkdir turtles_of_smsrc
 cd turtles_of_smsrc
-wildlife-app turtles_of_smsrc
+wildlife-app turtles_of_smsrc --download
 ```
 Next time, open a terminal and run only
 ```
@@ -65,10 +65,8 @@ wildlife-app turtles_of_smsrc
 ```
 If you run a different project than TurtlesOfSMSRC, change the project name (such as `turtlewatch_egypt`). Always run the app from the same folder, otherwise it will not find your data and answers.
 
-When the app starts for the first time, it will begin downloading the dataset, which may take half an hour. For TurtlewatchEgypt, some files cannot be downloaded and must be copied into the `data` subfolder manually. The app tells you which ones are missing.
+The `--download` option downloads the dataset, which may take half an hour, together with the segmentation and the data for verification. Use it also when you are told that a new version of the dataset or of the verification data is available. For TurtlewatchEgypt, some files cannot be downloaded and must be copied into the `data` subfolder manually. The app tells you which ones are missing.
 
 ## Using the app
 
 Using the app should be straightforward. Press Same (Q), Different (W) or Unknown (E) for validating whether the two shown turtles are the same. Use Previous (A) and Next (S) to move to the following images without giving an answer or to check the previous answer. You can also move to the next body part if the matching was performed across multiple body parts. It is highly recommended to use the keyboard shortcuts Q, W, E, A and S. The answers are saved to the file `answers.csv`.
-
-When a dataset is updated, it should be downloaded by the corresponding button. Similarly, when new predictions are available for verification, they can be automatically downloaded. The last button downloads segmentation masks, which are used to crop turtle heads and flippers.

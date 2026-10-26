@@ -5,6 +5,7 @@ import tkinter as tk
 from importlib.resources import files
 
 from .app import App
+from .app.app import DATA_CSV
 from .app.utils import download_file
 from .datasets import TurtlesOfSMSRC, TurtlewatchEgypt, WildlifeDataset
 
@@ -47,6 +48,19 @@ def download(dataset: WildlifeDataset, downloads: dict[str, str]) -> None:
     print("Download finished.")
 
 
+def check_files(dataset: WildlifeDataset, downloads: dict[str, str], project: str) -> None:
+    missing = []
+    if not dataset.is_downloaded():
+        missing.append("the dataset")
+    paths = set(downloads) | {DATA_CSV}
+    for path in sorted(paths):
+        if not os.path.exists(path):
+            missing.append(path)
+    if missing:
+        missing_str = "\n".join(missing)
+        raise SystemExit(f"Missing:\n{missing_str}\nRun 'wildlife-app {project} --download' or copy the files into {os.getcwd()}.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="wildlife-app")
     parser.add_argument("project", help="Project name, such as turtles_of_smsrc.")
@@ -61,6 +75,7 @@ def main() -> None:
     dataset, name = get_dataset(cfg)
     if args.download:
         download(dataset, cfg.get("downloads", {}))
+    check_files(dataset, cfg.get("downloads", {}), args.project)
 
     root = tk.Tk()
     App(root, dataset, name)

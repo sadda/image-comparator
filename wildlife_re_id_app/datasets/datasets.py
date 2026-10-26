@@ -10,9 +10,6 @@ from . import utils
 
 
 class WildlifeDataset:
-    segmentation_urls: list[str] = []
-    verification_url: str | None = None
-
     def __init__(self) -> None:
         self.query: WD | None = None
         self.database: WD | None = None
@@ -31,17 +28,12 @@ class WildlifeDataset:
     def is_downloaded(self) -> bool:
         raise NotImplementedError("Must be implemented by subclasses.")
 
-    def get_segmentation_files(self) -> tuple[list[str], list[str]]:
-        raise NotImplementedError("Must be implemented by subclasses.")
-
     def load(self) -> None:
         raise NotImplementedError("Must be implemented by subclasses.")
 
 
 class TurtlesOfSMSRC(WildlifeDataset):
     dataset_wd = wildlife_datasets.datasets.TurtlesOfSMSRC
-    segmentation_urls = ["https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/TurtlesOfSMSRC/segmentation.csv"]
-    verification_url = "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/TurtlesOfSMSRC/verification_data.csv"
 
     def __init__(self, root: str, matching_encounters_path: str | None = None) -> None:
         self.root = root
@@ -53,10 +45,6 @@ class TurtlesOfSMSRC(WildlifeDataset):
     def is_downloaded(self) -> bool:
         file_name = os.path.join(self.root, "metadata.csv")
         return os.path.exists(file_name)
-
-    def get_segmentation_files(self) -> tuple[list[str], list[str]]:
-        file_name = os.path.join(self.root, "segmentation.csv")
-        return (self.segmentation_urls, [file_name])
 
     def load(self) -> None:
         replace_identity = []
@@ -71,8 +59,6 @@ class TurtlesOfSMSRC(WildlifeDataset):
 
 class TurtlewatchEgypt(WildlifeDataset):
     dataset_wd_query = wildlife_datasets.datasets.TurtlewatchEgypt_Citizen
-    segmentation_urls = ["https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/Turtlewatch_Egypt/segmentation.csv"]
-    verification_url = "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/Turtlewatch_Egypt/verification_data.csv"
 
     def __init__(
         self,
@@ -105,12 +91,6 @@ class TurtlewatchEgypt(WildlifeDataset):
         # TODO: return hard error for other datasets
         file_name = os.path.join(self.root_citizen, "metadata.csv")
         return os.path.exists(file_name)
-
-    def get_segmentation_files(self) -> tuple[list[str], list[str]]:
-        # TODO: add segmentation for master database
-        # TODO: check if master database contains additional files, it also loads
-        file_name = os.path.join(self.root_citizen, "segmentation.csv")
-        return (self.segmentation_urls, [file_name])
 
     def load(self) -> None:
         self.query = TurtlewatchEgypt_Citizen(self.root_citizen).wildlife_dataset

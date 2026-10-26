@@ -1,6 +1,4 @@
-import filecmp
 import os
-import tempfile
 import time
 import tkinter as tk
 from collections.abc import Callable
@@ -13,10 +11,9 @@ import pandas as pd
 from PIL import Image, ImageTk
 
 from ..datasets import WildlifeDataset
-from .utils import convert_identity, download_file
+from .utils import convert_identity
 
 DATA_CSV = "verification_data.csv"
-SEGMENTATION_CSV = "segmentation.csv"
 ANS_CSV = "answers.csv"
 ANS_POS = "same"
 ANS_NEG = "different"
@@ -32,25 +29,9 @@ class App:
         self.name = name
         self.skip_filled = True
 
-        # Check whether the dataset was downloaded
-        if not self.dataset.is_downloaded():
-            self.download_dataset()
-            if not self.dataset.is_downloaded():
-                self.root.destroy()
-                return
-
         # Load the verification data
-        if not os.path.exists(DATA_CSV):
-            self.download_verification()
         df = pd.read_csv(DATA_CSV)
         assert isinstance(df.index, pd.RangeIndex)
-
-        # Check if segmentation data exist
-        _, paths = self.dataset.get_segmentation_files()
-        for path in paths:
-            if not os.path.exists(path):
-                self.download_segmentation()
-                break
 
         # Load the dataset
         self.dataset.load()
@@ -68,9 +49,8 @@ class App:
         self._initial_load()
         self._reset_i_lr()
 
-        # A messagebox shown earlier (e.g. during verification data download) runs its own
-        # event loop before mainloop() starts and can leave the OS keyboard focus off this
-        # window, silently breaking the key bindings. Reclaim it now that the UI is built.
+        # A messagebox shown earlier runs its own event loop before mainloop() starts and can leave
+        # the OS keyboard focus off this window, silently breaking the key bindings. Reclaim it now.
         self.root.lift()
         self.root.focus_force()
 
@@ -94,13 +74,13 @@ class App:
         columns1 = self.answers.columns.difference({"answer", "time", "index1", "index2"})
         columns2 = df.columns
         if set(columns1) != set(columns2) or not self.answers[columns1].equals(df[columns1]):
-            messagebox.showinfo("Info", f"File {ANS_CSV} has wrong format. It may help to delete it.")
-            self.close_app()
+            messagebox.showinfo("Info", f"File {ANS_CSV} has wrong format. It may help to delete it. The application will now close.")
+            self.root.destroy()
 
     def _initial_load(self):
         idx_null = self.answers[["index1", "index2"]].isnull()
         if idx_null.any().any():
-            messagebox.showinfo("Info", "Some entries are mismatched. Try to download segmentation of dataset.")
+            messagebox.showinfo("Info", "Some entries are mismatched. Try to run the app with --download.")
         else:
             # Load the first couple of images
             self._initialize_skipping()
@@ -114,12 +94,9 @@ class App:
             ("Previous (A)", "a", self.on_prev, 1, 0),
             ("Next (S)", "s", self.on_next, 1, 1),
             ("Next body part", None, self.next_body_part, 1, 2),
-            ("Download dataset", None, self.download_dataset_close, 2, 0),
-            ("Download segmentation", None, self.download_segmentation_close, 2, 1),
-            ("Download verification", None, self.download_verification_close, 2, 2),
-            ("Toggle heads left (R)", "r", self.on_toggle_left, 0, 3),
-            ("Toggle heads right (F)", "f", self.on_toggle_right, 1, 3),
-            ("Reset (V)", "v", self.on_reset, 2, 3),
+            ("Toggle heads left (R)", "r", self.on_toggle_left, 2, 0),
+            ("Toggle heads right (F)", "f", self.on_toggle_right, 2, 1),
+            ("Reset (V)", "v", self.on_reset, 2, 2),
         ]
 
     def _build_ui(self) -> None:
@@ -251,14 +228,6 @@ class App:
         self._show_image(img2, "r")
         self._reset_i_lr()
 
-    def download_dataset(self, event=None) -> None:
-        confirm = messagebox.askyesno(
-            title="Download dataset",
-            message="Download may take tens of minutes. Download the dataset now? Do not close the app please. It may close automatically.",
-        )
-        if confirm:
-            self.dataset.download_dataset()
-
     def next_body_part(self) -> None:
         self.skip_filled = True
         unique_parts = self.answers["matching_part"].unique()
@@ -266,54 +235,6 @@ class App:
         i = np.mod(i + 1, len(unique_parts))
         self.idx = np.where(unique_parts[i] == self.answers["matching_part"])[0][0] - 1
         self.next()
-
-    # TODO: handle if internet not connected
-    def _download_files(self, paths: list[str], urls: list[str]) -> bool:
-        confirm = messagebox.askyesno(title="Download", message="Download the file now? Do not close the app please. It may close automatically.")
-        replaced = False
-        if confirm:
-            for path, url in zip(paths, urls):
-                base_name = os.path.basename(path)
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    path_tmp = os.path.join(tmpdir, base_name)
-                    download_file(url, path_tmp)
-                    if not os.path.exists(path_tmp):
-                        raise RuntimeError(f"Download failed for {base_name}")
-                    if not (os.path.exists(path) and filecmp.cmp(path, path_tmp, shallow=False)):
-                        path_dir = os.path.dirname(path)
-                        if path_dir != "":
-                            os.makedirs(path_dir, exist_ok=True)
-                        os.replace(path_tmp, path)
-                        replaced = True
-        self._reset_time()
-        return replaced
-
-    def download_segmentation(self) -> bool:
-        urls, paths = self.dataset.get_segmentation_files()
-        return self._download_files(paths, urls)
-
-    def download_verification(self) -> bool:
-        assert self.dataset.verification_url is not None
-        return self._download_files([DATA_CSV], [self.dataset.verification_url])
-
-    def download_segmentation_close(self) -> None:
-        replaced = self.download_segmentation()
-        self.close_app(ignore=not replaced)
-
-    def download_verification_close(self) -> None:
-        replaced = self.download_verification()
-        self.close_app(ignore=not replaced)
-
-    def download_dataset_close(self) -> None:
-        self.download_dataset()
-        self.close_app()
-
-    def close_app(self, ignore: bool = False) -> None:
-        if not ignore:
-            messagebox.showinfo("Exit", "The application will now close.")
-            self.root.destroy()
-        else:
-            messagebox.showinfo("Info", "The file is the newest one. No need to close.")
 
     def _reset_i_lr(self) -> None:
         self.i_l = 0
