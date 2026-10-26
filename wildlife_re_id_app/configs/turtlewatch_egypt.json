@@ -5,5 +5,9 @@
   "root_citizen": "data/citizen",
   "root_heads": "data/PROFILES",
   "root_flippers_f": "data/TWE_flipperprofiles_registered ind_LR_front",
-  "root_flippers_r": "data/TWE_flipperprofiles_registered ind_LR_rear"
+  "root_flippers_r": "data/TWE_flipperprofiles_registered ind_LR_rear",
+  "downloads": {
+    "data/citizen/segmentation.csv": "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/Turtlewatch_Egypt/segmentation.csv",
+    "verification_data.csv": "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/Turtlewatch_Egypt/verification_data.csv"
+  }
 }

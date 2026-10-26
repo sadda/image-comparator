@@ -5,6 +5,7 @@ import tkinter as tk
 from importlib.resources import files
 
 from .app import App
+from .app.utils import download_file
 from .datasets import TurtlesOfSMSRC, TurtlewatchEgypt, WildlifeDataset
 
 DATASETS = {
@@ -32,14 +33,25 @@ def load_config(project: str, config_path: str | None) -> dict:
 def get_dataset(cfg: dict) -> tuple[WildlifeDataset, str]:
     kwargs = dict(cfg)
     name = kwargs.pop("dataset")
+    kwargs.pop("downloads", None)
     dataset_cls = DATASETS[name]
     return dataset_cls(**kwargs), name
+
+
+def download(dataset: WildlifeDataset, downloads: dict[str, str]) -> None:
+    print("Downloading the dataset. This may take tens of minutes.")
+    dataset.download_dataset()
+    for path, url in downloads.items():
+        print(f"Downloading {path}")
+        download_file(url, path)
+    print("Download finished.")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog="wildlife-app")
     parser.add_argument("project", help="Project name, such as turtles_of_smsrc.")
     parser.add_argument("--config", help="Custom config file merged into the built-in one.")
+    parser.add_argument("--download", action="store_true", help="Download the dataset and the files listed in the config before starting the app.")
     args = parser.parse_args()
 
     if os.path.samefile(os.getcwd(), os.path.expanduser("~")):
@@ -47,6 +59,9 @@ def main() -> None:
 
     cfg = load_config(args.project, args.config)
     dataset, name = get_dataset(cfg)
+    if args.download:
+        download(dataset, cfg.get("downloads", {}))
+
     root = tk.Tk()
     App(root, dataset, name)
     root.mainloop()

@@ -1,5 +1,9 @@
 {
   "dataset": "TurtlesOfSMSRC",
   "root": "data",
-  "matching_encounters_path": "data/matching_encounters.txt"
+  "matching_encounters_path": "data/matching_encounters.txt",
+  "downloads": {
+    "data/segmentation.csv": "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/TurtlesOfSMSRC/segmentation.csv",
+    "verification_data.csv": "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/TurtlesOfSMSRC/verification_data.csv"
+  }
 }
