@@ -17,6 +17,8 @@ class MatchingRules(Protocol):
     # Column used for jumping to the next group and the label of its button
     next_column: str
     next_label: str
+    # Message shown when update rejects an answer (None for no message)
+    reject_message: str | None
 
     def __init__(self, answers: pd.DataFrame) -> None: ...
 
@@ -36,6 +38,7 @@ class QueryQueryRules:
     }
     next_column = "matching_part"
     next_label = "Next body part"
+    reject_message = None
 
     def __init__(self, answers: pd.DataFrame) -> None:
         self.answers = answers
@@ -79,6 +82,8 @@ class QueryQueryRules:
         # TODO: the whole logic will break if A-B same, B-C different, A-C different and the user changes B-C to same
         a = self.identity1.iloc[idx]
         b = self.identity2.iloc[idx]
+        if answer_new == answer_old:
+            return answer_new
         if answer_new == ANS_POS:
             # Rule: keep the forest structure (no cycles), so "same" is rejected for already connected identities
             if nx.has_path(self.G_same, a, b):
@@ -127,6 +132,9 @@ class QueryDatabaseRules:
     }
     next_column = "encounter1"
     next_label = "Next encounter"
+    # TODO: it would be more helpful to provide the specific reason
+    # TODO: update should return a potential error message instead of the new answer
+    reject_message = "The encounter is already identified as another identity. The answer was not accepted."
 
     def __init__(self, answers: pd.DataFrame) -> None:
         self.answers = answers

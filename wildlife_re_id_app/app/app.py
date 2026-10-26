@@ -273,8 +273,8 @@ class App:
     def _update_answer(self, answer_new: str) -> None:
         answer_old = self.answers.loc[self.idx, "answer"]
         answer = self.rules.update(self.idx, answer_old, answer_new)
-        if answer != answer_new:
-            messagebox.showinfo("Info", "The answer contradicts the previous answers and was not accepted.")
+        if answer != answer_new and self.rules.reject_message is not None:
+            messagebox.showinfo("Info", self.rules.reject_message)
         self.answers.loc[self.idx, "answer"] = answer
 
     def _answer_empty(self) -> bool:
