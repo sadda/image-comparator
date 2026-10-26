@@ -3,10 +3,10 @@ import os
 
 import pandas as pd
 import wildlife_datasets
+from animal_re_id.datasets import TurtlewatchEgypt_Citizen, TurtlewatchEgypt_Master
 from wildlife_datasets.datasets import WildlifeDataset as WD
 
 from . import utils
-from animal_re_id.datasets import TurtlewatchEgypt_Citizen, TurtlewatchEgypt_Master
 
 
 class WildlifeDataset:
@@ -40,12 +40,8 @@ class WildlifeDataset:
 
 class TurtlesOfSMSRC(WildlifeDataset):
     dataset_wd = wildlife_datasets.datasets.TurtlesOfSMSRC
-    segmentation_urls = [
-        "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/TurtlesOfSMSRC/segmentation.csv"
-    ]
-    verification_url = (
-        "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/TurtlesOfSMSRC/verification_data.csv"
-    )
+    segmentation_urls = ["https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/TurtlesOfSMSRC/segmentation.csv"]
+    verification_url = "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/TurtlesOfSMSRC/verification_data.csv"
 
     def __init__(self, root: str, matching_encounters_path: str | None = None) -> None:
         self.root = root
@@ -69,31 +65,25 @@ class TurtlesOfSMSRC(WildlifeDataset):
                 raise FileNotFoundError(f"Matching encounters file not found: {self.matching_encounters_path}")
             with open(self.matching_encounters_path) as f:
                 replace_identity = ast.literal_eval(f.read())
-        self.query = self.dataset_wd(
-            self.root, load_segmentation=True, img_load="bbox", replace_identity=replace_identity
-        )
+        self.query = self.dataset_wd(self.root, load_segmentation=True, img_load="bbox", replace_identity=replace_identity)
         self.database = self.query
 
 
 class TurtlewatchEgypt(WildlifeDataset):
     dataset_wd_query = wildlife_datasets.datasets.TurtlewatchEgypt_Citizen
-    segmentation_urls = [
-        "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/Turtlewatch_Egypt/segmentation.csv"
-    ]
-    verification_url = (
-        "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/Turtlewatch_Egypt/verification_data.csv"
-    )
+    segmentation_urls = ["https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/Turtlewatch_Egypt/segmentation.csv"]
+    verification_url = "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/Turtlewatch_Egypt/verification_data.csv"
 
     def __init__(
-            self,
-            file_name_individuals: str,
-            file_name_downloads: str,
-            root_citizen: str,
-            root_heads: str,
-            root_flippers_f: str,
-            root_flippers_r: str,
-            ) -> None:
-        
+        self,
+        file_name_individuals: str,
+        file_name_downloads: str,
+        root_citizen: str,
+        root_heads: str,
+        root_flippers_f: str,
+        root_flippers_r: str,
+    ) -> None:
+
         self.file_name_individuals = file_name_individuals
         self.file_name_downloads = file_name_downloads
         self.root_citizen = root_citizen
@@ -118,6 +108,4 @@ class TurtlewatchEgypt(WildlifeDataset):
 
     def load(self) -> None:
         self.query = TurtlewatchEgypt_Citizen(self.root_citizen).wildlife_dataset
-        self.database = TurtlewatchEgypt_Master(
-            self.root_heads, self.root_flippers_f, self.root_flippers_r, self.file_name_individuals
-        ).wildlife_dataset
+        self.database = TurtlewatchEgypt_Master(self.root_heads, self.root_flippers_f, self.root_flippers_r, self.file_name_individuals).wildlife_dataset
