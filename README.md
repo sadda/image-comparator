@@ -16,22 +16,21 @@ We provide two ways of installation. Both are for Windows only. If you need to u
 
 ### Installation 2
 
-- Open PowerShell (press the Windows key, type `powershell` and press enter). It is a text window where commands are typed. Run in it (type or paste it and press enter)
-  ```
-  powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-  ```
-  This installs [uv](https://docs.astral.sh/uv/), a tool for installing Python apps. Close PowerShell afterwards.
-- Open a new PowerShell and run
-  ```
-  uv tool install https://github.com/sadda/wildlife-app/archive/refs/heads/master.zip
-  ```
-  This will install Python, the app and the required Python packages.
+Open PowerShell (press the Windows key, type `powershell` and press enter) and run these commands one by one (paste each and press enter):
+```
+winget install --id Git.Git -e
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+Close PowerShell, open a new one and run
+```
+uv tool install git+https://github.com/sadda/wildlife-app
+```
 
 ## Updating the app
 
 For Installation 1, the whole process must be repeated. For Installation 2, open PowerShell and run
 ```
-uv tool install --reinstall --refresh https://github.com/sadda/wildlife-app/archive/refs/heads/master.zip
+uv tool install --reinstall git+https://github.com/sadda/wildlife-app
 ```
 
 ## Running the app
