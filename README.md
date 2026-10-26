@@ -65,7 +65,7 @@ wildlife-app turtles_of_smsrc
 ```
 If you run a different project than TurtlesOfSMSRC, change the project name (such as `turtlewatch_egypt`). Always run the app from the same folder, otherwise it will not find your data and answers.
 
-The `--download` option downloads the dataset, which may take half an hour, together with the segmentation and the data for verification. Use it also when you are told that a new version of the dataset or of the verification data is available. For TurtlewatchEgypt, some files cannot be downloaded and must be copied into the `data` subfolder manually. The app tells you which ones are missing.
+The `--download` option downloads the dataset, which may take half an hour, together with the segmentation and the data for verification. Use it also when you are told that a new version of the dataset is available. When only new verification data or segmentation is available, use `--download-files` instead, which skips the slow dataset download. For TurtlewatchEgypt, some files cannot be downloaded and must be copied into the `data` subfolder manually. The app tells you which ones are missing.
 
 ## Using the app
 

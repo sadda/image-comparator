@@ -39,9 +39,10 @@ def get_dataset(cfg: dict) -> tuple[WildlifeDataset, str]:
     return dataset_cls(**kwargs), name
 
 
-def download(dataset: WildlifeDataset, downloads: dict[str, str]) -> None:
-    print("Downloading the dataset. This may take tens of minutes.")
-    dataset.download_dataset()
+def download(dataset: WildlifeDataset, downloads: dict[str, str], download_dataset: bool) -> None:
+    if download_dataset:
+        print("Downloading the dataset. This may take tens of minutes.")
+        dataset.download_dataset()
     for path, url in downloads.items():
         print(f"Downloading {path}")
         download_file(url, path)
@@ -66,6 +67,7 @@ def main() -> None:
     parser.add_argument("project", help="Project name, such as turtles_of_smsrc.")
     parser.add_argument("--config", help="Custom config file merged into the built-in one.")
     parser.add_argument("--download", action="store_true", help="Download the dataset and the files listed in the config before starting the app.")
+    parser.add_argument("--download-files", action="store_true", help="Download only the files listed in the config (not the dataset) before starting the app.")
     args = parser.parse_args()
 
     if os.path.samefile(os.getcwd(), os.path.expanduser("~")):
@@ -73,8 +75,8 @@ def main() -> None:
 
     cfg = load_config(args.project, args.config)
     dataset, name = get_dataset(cfg)
-    if args.download:
-        download(dataset, cfg.get("downloads", {}))
+    if args.download or args.download_files:
+        download(dataset, cfg.get("downloads", {}), args.download)
     check_files(dataset, cfg.get("downloads", {}), args.project)
 
     root = tk.Tk()
