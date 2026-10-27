@@ -15,8 +15,6 @@ class MatchingRules(Protocol):
     # Column used for jumping to the next group and the label of its button
     next_column: str
     next_label: str
-    # Message shown when update rejects an answer (None for no message)
-    reject_message: str | None
 
     def __init__(self, answers: pd.DataFrame) -> None: ...
 
@@ -24,7 +22,8 @@ class MatchingRules(Protocol):
 
     def answer_exists(self, idx: int) -> bool: ...
 
-    def update(self, idx: int, answer_old: str, answer_new: str) -> str: ...
+    # Returns the answer to be saved and a message to be shown (None for no message)
+    def update(self, idx: int, answer_old: str, answer_new: str) -> tuple[str, str | None]: ...
 
     def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]: ...
 
@@ -34,7 +33,6 @@ class QueryQueryRules:
 
     next_column = "matching_part"
     next_label = "Next body part"
-    reject_message = None
 
     def __init__(self, answers: pd.DataFrame) -> None:
         self.answers = answers
@@ -81,20 +79,21 @@ class QueryQueryRules:
                 return True
         return False
 
-    def update(self, idx: int, answer_old: str, answer_new: str) -> str:
+    def update(self, idx: int, answer_old: str, answer_new: str) -> tuple[str, str | None]:
         # TODO: the whole logic will break if A-B same, B-C different, A-C different and the user changes B-C to same
         a = self.identity1.iloc[idx]
         b = self.identity2.iloc[idx]
         if answer_new == answer_old:
-            return answer_new
+            return answer_new, None
         if answer_new == ANS_POS:
             # Rule: keep the forest structure (no cycles), so "same" is rejected for already connected identities
+            # No message is needed since the identities are already the same
             if nx.has_path(self.G_same, a, b):
-                return ANS_UNK
+                return answer_old, None
             self.G_same.add_edge(a, b)
         elif answer_old == ANS_POS:
             self.G_same.remove_edge(a, b)
-        return answer_new
+        return answer_new, None
 
     def _decided(self) -> pd.Series:
         # Same as answer_exists for all rows, but computes the components and "different" pairs only once
@@ -131,9 +130,6 @@ class QueryDatabaseRules:
 
     next_column = "encounter1"
     next_label = "Next encounter"
-    # TODO: it would be more helpful to provide the specific reason
-    # TODO: update should return a potential error message instead of the new answer
-    reject_message = "The encounter is already identified as another identity. The answer was not accepted."
 
     def __init__(self, answers: pd.DataFrame) -> None:
         self.answers = answers
@@ -177,15 +173,16 @@ class QueryDatabaseRules:
             return True
         return False
 
-    def update(self, idx: int, answer_old: str, answer_new: str) -> str:
+    def update(self, idx: int, answer_old: str, answer_new: str) -> tuple[str, str | None]:
         encounter = self.answers.iloc[idx]["encounter1"]
         identity = self.identity2.iloc[idx]
         if answer_new == ANS_POS:
             # Rule: an encounter cannot be the same as two different identities
-            identities = self._identified_as(encounter, exclude_idx=idx)
-            if identities - {identity}:
-                return ANS_UNK
-        return answer_new
+            identities = self._identified_as(encounter, exclude_idx=idx) - {identity}
+            if identities:
+                identities_str = ", ".join(sorted(identities))
+                return answer_old, f"The encounter is already identified as {identities_str}. The answer was not accepted."
+        return answer_new, None
 
     def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]:
         n_encounters = query["encounter_id"].nunique()

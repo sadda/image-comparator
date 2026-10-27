@@ -193,7 +193,6 @@ class App:
         answers_save.to_csv(ANS_CSV, index=False)
 
     def _set_text(self) -> None:
-        # TODO: add more information?
         self.text_box.config(state="normal")
         self.text_box.delete("1.0", "end")
         assert self.dataset.query is not None and self.dataset.database is not None
@@ -281,10 +280,10 @@ class App:
 
     def _update_answer(self, answer_new: str) -> None:
         answer_old = self.answers.loc[self.idx, "answer"]
-        answer = self.rules.update(self.idx, answer_old, answer_new)
-        if answer != answer_new and self.rules.reject_message is not None:
-            messagebox.showinfo("Info", self.rules.reject_message)
+        answer, message = self.rules.update(self.idx, answer_old, answer_new)
         self.answers.loc[self.idx, "answer"] = answer
+        if message is not None:
+            messagebox.showinfo("Info", message)
 
     def _answer_empty(self) -> bool:
         answer = self.answers.iloc[self.idx]["answer"]
