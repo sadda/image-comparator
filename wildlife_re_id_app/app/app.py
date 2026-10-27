@@ -11,6 +11,7 @@ from PIL import Image, ImageTk
 
 from ..datasets import WildlifeDataset
 from .rules import ANS_NEG, ANS_POS, ANS_UNK, MatchingRules, QueryDatabaseRules, QueryQueryRules
+from .utils import read_answers
 
 DATA_CSV = "verification_data.csv"
 ANS_CSV = "answers.csv"
@@ -27,7 +28,7 @@ class App:
         self.closed = False
 
         # Load the verification data
-        df = pd.read_csv(DATA_CSV)
+        df = read_answers(DATA_CSV)
         assert isinstance(df.index, pd.RangeIndex)
 
         # Load the dataset
@@ -65,7 +66,7 @@ class App:
     def _initialize_answers(self, df):
         # Load the answer data
         if os.path.exists(ANS_CSV):
-            self.answers = pd.read_csv(ANS_CSV)
+            self.answers = read_answers(ANS_CSV)
             self.answers["answer"] = self.answers["answer"].astype(object)
             self.answers["time"] = self.answers["time"].astype(float)
         else:
