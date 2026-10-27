@@ -356,6 +356,7 @@ class App:
             else:
                 # Nothing to show before, stay at the displayed row
                 self.idx = self.idx_shown
+                self._reset_time()
                 return
 
         self.idx_shown = self.idx
