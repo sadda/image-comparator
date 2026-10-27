@@ -24,6 +24,7 @@ class App:
         self.dataset = dataset
         self.name = name
         self.skip_filled = True
+        self.closed = False
 
         # Load the verification data
         df = pd.read_csv(DATA_CSV)
@@ -48,7 +49,11 @@ class App:
         self._bind_keys()
         self._initialize_answers(df)
         self._check_answers(df)
+        if self.closed:
+            return
         self._initial_load()
+        if self.closed:
+            return
         self._reset_i_lr()
 
         # A messagebox shown earlier runs its own event loop before mainloop() starts and can leave
@@ -77,7 +82,7 @@ class App:
         columns2 = df.columns
         if set(columns1) != set(columns2) or not self.answers[columns1].equals(df[columns1]):
             messagebox.showinfo("Info", f"File {ANS_CSV} has wrong format. It may help to delete it. The application will now close.")
-            self.root.destroy()
+            self._close()
 
     def _initial_load(self):
         idx_null = self.answers[["index1", "index2"]].isnull()
@@ -154,6 +159,10 @@ class App:
 
         for text, _, action, row, col in self._actions():
             ttk.Button(self.btn_frame, text=text, command=action).grid(row=row, column=col)
+
+    def _close(self) -> None:
+        self.closed = True
+        self.root.destroy()
 
     def _bind_keys(self) -> None:
         for _, key, action, _, _ in self._actions():
@@ -332,7 +341,7 @@ class App:
             if not (0 <= self.idx < len(self.answers)):
                 if self.skip_filled:
                     messagebox.showinfo("Info", "All turtles were identified. Either delete some rows in answers.csv or the whole file.")
-                self.root.destroy()
+                self._close()
                 return
 
             if not self._skip_plotting():
