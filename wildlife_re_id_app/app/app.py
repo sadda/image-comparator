@@ -262,7 +262,6 @@ class App:
             raise ValueError("Position must be l or r.")
         assert dataset is not None
 
-        # TODO: do not hard-code heads
         column, value = self.rules.toggle_filter(self.idx, position)
         mask1 = dataset.metadata["label"] == "head"
         mask2 = dataset.metadata[column] == value

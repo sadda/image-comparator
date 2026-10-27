@@ -90,7 +90,6 @@ class TurtlewatchEgypt(WildlifeDataset):
         self.dataset_wd_query.get_data(self.root_citizen, data=data, force=True)
 
     def is_downloaded(self) -> bool:
-        # TODO: return hard error for other datasets
         file_name = os.path.join(self.root_citizen, "metadata.csv")
         return os.path.exists(file_name)
 
