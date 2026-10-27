@@ -1,0 +1,210 @@
+from typing import Protocol
+
+import networkx as nx
+import numpy as np
+import pandas as pd
+
+from .utils import convert_identity
+
+ANS_POS = "same"
+ANS_NEG = "different"
+ANS_UNK = ""
+
+
+class MatchingRules(Protocol):
+    # Column used for jumping to the next group and the label of its button
+    next_column: str
+    next_label: str
+
+    def __init__(self, answers: pd.DataFrame) -> None: ...
+
+    def toggle_filter(self, idx: int, position: str) -> tuple[str, str]: ...
+
+    def answer_exists(self, idx: int) -> bool: ...
+
+    # Returns the answer to be saved and a message to be shown (None for no message)
+    def update(self, idx: int, answer_old: str, answer_new: str) -> tuple[str, str | None]: ...
+
+    def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]: ...
+
+
+class QueryQueryRules:
+    """Query encounters are matched with each other. "Same" answers merge encounters into clusters."""
+
+    next_column = "matching_part"
+    next_label = "Next body part"
+
+    def __init__(self, answers: pd.DataFrame) -> None:
+        self.answers = answers
+        self.identity1 = convert_identity(answers, "identity1", "encounter1")
+        self.identity2 = convert_identity(answers, "identity2", "encounter2")
+
+        mask_same = answers["answer"] == ANS_POS
+        nodes = np.unique(self.identity1.to_list() + self.identity2.to_list())
+        edges_same = zip(self.identity1[mask_same], self.identity2[mask_same])
+        self.G_same = nx.Graph()
+        self.G_same.add_nodes_from(nodes.tolist())
+        self.G_same.add_edges_from(edges_same)
+        self._check()
+
+    def _check(self) -> None:
+        if not nx.is_forest(self.G_same):
+            raise ValueError("G_same must not have any cycles")
+        mask_diff = self.answers["answer"] == ANS_NEG
+        for a, b in zip(self.identity1[mask_diff], self.identity2[mask_diff]):
+            if nx.has_path(self.G_same, a, b):
+                raise ValueError("Cluster contains both same and different.")
+    
+    def toggle_filter(self, idx: int, position: str) -> tuple[str, str]:
+        # Toggle over the images of the encounter (column in metadata, value)
+        row = self.answers.iloc[idx]
+        if position == "l":
+            return "encounter_id", row["encounter1"]
+        return "encounter_id", row["encounter2"]
+
+    def answer_exists(self, idx: int) -> bool:
+        a = self.identity1.iloc[idx]
+        b = self.identity2.iloc[idx]
+
+        # Rule 1: the identities are already in the same cluster
+        if nx.has_path(self.G_same, a, b):
+            return True
+
+        # Rule 2: the clusters of the identities are connected by a "different" answer
+        comp_a = nx.node_connected_component(self.G_same, a)
+        comp_b = nx.node_connected_component(self.G_same, b)
+        mask_diff = self.answers["answer"] == ANS_NEG
+        for u, v in zip(self.identity1[mask_diff], self.identity2[mask_diff]):
+            if (u in comp_a and v in comp_b) or (v in comp_a and u in comp_b):
+                return True
+        return False
+
+    def update(self, idx: int, answer_old: str, answer_new: str) -> tuple[str, str | None]:
+        # TODO: the whole logic will break if A-B same, B-C different, A-C different and the user changes B-C to same
+        a = self.identity1.iloc[idx]
+        b = self.identity2.iloc[idx]
+        if answer_new == answer_old:
+            return answer_new, None
+        if answer_new == ANS_POS:
+            # Rule: keep the forest structure (no cycles), so "same" is rejected for already connected identities
+            # No message is needed since the identities are already the same
+            if nx.has_path(self.G_same, a, b):
+                return answer_old, None
+            self.G_same.add_edge(a, b)
+        elif answer_old == ANS_POS:
+            self.G_same.remove_edge(a, b)
+        return answer_new, None
+
+    def _decided(self) -> pd.Series:
+        # Same as answer_exists for all rows, but computes the components and "different" pairs only once
+        component = {}
+        for i, nodes in enumerate(nx.connected_components(self.G_same)):
+            for node in nodes:
+                component[node] = i
+        component1 = self.identity1.map(component)
+        component2 = self.identity2.map(component)
+
+        mask_diff = self.answers["answer"] == ANS_NEG
+        pairs_diff = set(zip(component1[mask_diff], component2[mask_diff]))
+        pairs_diff |= {(b, a) for a, b in pairs_diff}
+
+        same_component = component1 == component2
+        diff_component = pd.Series([pair in pairs_diff for pair in zip(component1, component2)], index=self.answers.index)
+        return same_component | diff_component
+
+    def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]:
+        n_encounters = query["encounter_id"].nunique()
+        n_identities = query.loc[query["identity"] != "unknown", "identity"].nunique()
+        decided = self._decided()
+        lines = [f"DATASET: {n_encounters} ENCOUNTERS, {n_identities} KNOWN IDENTITIES.", ""]
+        for matching_part, answers_part in self.answers.groupby("matching_part"):
+            n = len(answers_part)
+            n_answered = answers_part["answer"].notnull().sum()
+            n_decided = decided[answers_part.index].sum()
+            lines.append(f"{str(matching_part).upper()} ({n}): answered {n_answered}, decided {n_decided}.")
+        return lines
+
+
+class QueryDatabaseRules:
+    """Query encounters are matched with database identities. Each encounter has at most one identity."""
+
+    next_column = "encounter1"
+    next_label = "Next encounter"
+
+    def __init__(self, answers: pd.DataFrame) -> None:
+        self.answers = answers
+        # Unknown database identities are distinguished by their encounters
+        self.identity2 = convert_identity(answers, "identity2", "encounter2")
+        self._check()
+
+    def _identified_as(self, encounter: str, exclude_idx: int | None = None) -> set[str]:
+        mask = (self.answers["encounter1"] == encounter) & (self.answers["answer"] == ANS_POS)
+        if exclude_idx is not None:
+            mask &= self.answers.index != exclude_idx
+        return set(self.identity2[mask])
+
+    def _check(self) -> None:
+        answers_same = self.answers[self.answers["answer"] == ANS_POS]
+        for encounter, answers_encounter in answers_same.groupby("encounter1"):
+            identities = set(self.identity2[answers_encounter.index])
+            if len(identities) > 1:
+                raise ValueError(f"Encounter {encounter} is identified as multiple identities: {identities}.")
+
+    def toggle_filter(self, idx: int, position: str) -> tuple[str, str]:
+        # Toggle over the images of the query encounter and of the database identity (column in metadata, value)
+        row = self.answers.iloc[idx]
+        if position == "l":
+            return "encounter_id", row["encounter1"]
+        if row["identity2"] == "unknown":
+            return "encounter_id", row["encounter2"]
+        return "identity", row["identity2"]
+
+    def answer_exists(self, idx: int) -> bool:
+        encounter = self.answers.iloc[idx]["encounter1"]
+        identity = self.identity2.iloc[idx]
+
+        # Rule 1: the encounter is already identified
+        if self._identified_as(encounter):
+            return True
+
+        # Rule 2: the encounter was already marked as different from this identity (possibly for another body part)
+        mask = (self.answers["encounter1"] == encounter) & (self.identity2 == identity)
+        if (self.answers.loc[mask, "answer"] == ANS_NEG).any():
+            return True
+        return False
+
+    def update(self, idx: int, answer_old: str, answer_new: str) -> tuple[str, str | None]:
+        encounter = self.answers.iloc[idx]["encounter1"]
+        identity = self.identity2.iloc[idx]
+        if answer_new == ANS_POS:
+            # Rule: an encounter cannot be the same as two different identities
+            identities = self._identified_as(encounter, exclude_idx=idx) - {identity}
+            if identities:
+                identities_str = ", ".join(sorted(identities))
+                return answer_old, f"The encounter is already identified as {identities_str}. The answer was not accepted."
+        return answer_new, None
+
+    def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]:
+        n_encounters = query["encounter_id"].nunique()
+        # Each unknown database encounter is a separate identity
+        mask_unknown = database["identity"] == "unknown"
+        n_identities = database.loc[~mask_unknown, "identity"].nunique() + database.loc[mask_unknown, "encounter_id"].nunique()
+        # Number of candidate identities and of identities answered as different for each encounter
+        pairs_all = pd.DataFrame({"encounter1": self.answers["encounter1"], "identity2": self.identity2})
+        pairs = pairs_all.drop_duplicates()
+        pairs_diff = pairs_all[self.answers["answer"] == ANS_NEG].drop_duplicates()
+        n_candidates = pairs.groupby("encounter1").size()
+        n_diff = pairs_diff.groupby("encounter1").size().reindex(n_candidates.index, fill_value=0)
+
+        encounters_same = self.answers.loc[self.answers["answer"] == ANS_POS, "encounter1"]
+        identified = n_candidates.index.isin(encounters_same)
+        new = ~identified & (n_diff == n_candidates).to_numpy()
+        n = len(n_candidates)
+        n_identified = identified.sum()
+        n_new = new.sum()
+        n_open = n - n_identified - n_new
+        return [
+            f"QUERY: {n_encounters} ENCOUNTERS. DATABASE: {n_identities} IDENTITIES.",
+            "",
+            f"ENCOUNTERS ({n}): identified {n_identified}, new {n_new}, open {n_open}.",
+        ]

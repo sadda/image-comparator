@@ -5,9 +5,12 @@ import tkinter as tk
 from importlib.resources import files
 
 from .app import App
-from .datasets import TurtlesOfSMSRC, TurtlewatchEgypt, WildlifeDataset
+from .app.app import DATA_CSV
+from .datasets import Example, TurtlesOfSMSRC, TurtlewatchEgypt, WildlifeDataset
+from .datasets.utils import download_file
 
 DATASETS = {
+    "Example": Example,
     "TurtlesOfSMSRC": TurtlesOfSMSRC,
     "TurtlewatchEgypt": TurtlewatchEgypt,
 }
@@ -32,14 +35,40 @@ def load_config(project: str, config_path: str | None) -> dict:
 def get_dataset(cfg: dict) -> tuple[WildlifeDataset, str]:
     kwargs = dict(cfg)
     name = kwargs.pop("dataset")
+    kwargs.pop("downloads", None)
     dataset_cls = DATASETS[name]
     return dataset_cls(**kwargs), name
+
+
+def download(dataset: WildlifeDataset, downloads: dict[str, str], download_dataset: bool) -> None:
+    if download_dataset:
+        print("Downloading the dataset. This may take tens of minutes.")
+        dataset.download_dataset()
+    for path, url in downloads.items():
+        print(f"Downloading {path}")
+        download_file(url, path)
+    print("Download finished.")
+
+
+def check_files(dataset: WildlifeDataset, downloads: dict[str, str], project: str) -> None:
+    missing = []
+    if not dataset.is_downloaded():
+        missing.append("the dataset")
+    paths = set(downloads) | {DATA_CSV}
+    for path in sorted(paths):
+        if not os.path.exists(path):
+            missing.append(path)
+    if missing:
+        missing_str = "\n".join(missing)
+        raise SystemExit(f"Missing:\n{missing_str}\nRun 'wildlife-app {project} --download' or copy the files into {os.getcwd()}.")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog="wildlife-app")
     parser.add_argument("project", help="Project name, such as turtles_of_smsrc.")
     parser.add_argument("--config", help="Custom config file merged into the built-in one.")
+    parser.add_argument("--download", action="store_true", help="Download the dataset and the files listed in the config before starting the app.")
+    parser.add_argument("--download-files", action="store_true", help="Download only the files listed in the config (not the dataset) before starting the app.")
     args = parser.parse_args()
 
     if os.path.samefile(os.getcwd(), os.path.expanduser("~")):
@@ -47,6 +76,10 @@ def main() -> None:
 
     cfg = load_config(args.project, args.config)
     dataset, name = get_dataset(cfg)
+    if args.download or args.download_files:
+        download(dataset, cfg.get("downloads", {}), args.download)
+    check_files(dataset, cfg.get("downloads", {}), args.project)
+
     root = tk.Tk()
     App(root, dataset, name)
     root.mainloop()

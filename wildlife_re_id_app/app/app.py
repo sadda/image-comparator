@@ -1,26 +1,20 @@
-import filecmp
 import os
-import tempfile
 import time
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import messagebox, ttk
 from typing import cast
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageTk
 
 from ..datasets import WildlifeDataset
-from .utils import convert_identity, download_file
+from .rules import ANS_NEG, ANS_POS, ANS_UNK, MatchingRules, QueryDatabaseRules, QueryQueryRules
+from .utils import read_answers
 
 DATA_CSV = "verification_data.csv"
-SEGMENTATION_CSV = "segmentation.csv"
 ANS_CSV = "answers.csv"
-ANS_POS = "same"
-ANS_NEG = "different"
-ANS_UNK = ""
 CANVAS_SIZE = 400
 
 
@@ -31,53 +25,48 @@ class App:
         self.dataset = dataset
         self.name = name
         self.skip_filled = True
-
-        # Check whether the dataset was downloaded
-        if not self.dataset.is_downloaded():
-            self.download_dataset()
-            if not self.dataset.is_downloaded():
-                self.root.destroy()
-                return
+        self.closed = False
 
         # Load the verification data
-        if not os.path.exists(DATA_CSV):
-            self.download_verification()
-        df = pd.read_csv(DATA_CSV)
+        df = read_answers(DATA_CSV)
         assert isinstance(df.index, pd.RangeIndex)
-
-        # Check if segmentation data exist
-        _, paths = self.dataset.get_segmentation_files()
-        for path in paths:
-            if not os.path.exists(path):
-                self.download_segmentation()
-                break
 
         # Load the dataset
         self.dataset.load()
         assert self.dataset.query is not None
-        self.n_encounters = self.dataset.query.metadata["encounter_id"].nunique()
-        self.n_identities = self.dataset.query.metadata["identity"].nunique()
+
+        # Select the rules for skipping and navigation
+        assert self.dataset.database is not None
+        self.rules_cls: type[MatchingRules]
+        if self.dataset.query.metadata.equals(self.dataset.database.metadata):
+            self.rules_cls = QueryQueryRules
+        else:
+            self.rules_cls = QueryDatabaseRules
 
         # Build UI
         self.idx = 0
+        self.idx_shown = 0
         self.increase = True
         self._build_ui()
         self._bind_keys()
         self._initialize_answers(df)
         self._check_answers(df)
+        if self.closed:
+            return
         self._initial_load()
+        if self.closed:
+            return
         self._reset_i_lr()
 
-        # A messagebox shown earlier (e.g. during verification data download) runs its own
-        # event loop before mainloop() starts and can leave the OS keyboard focus off this
-        # window, silently breaking the key bindings. Reclaim it now that the UI is built.
+        # A messagebox shown earlier runs its own event loop before mainloop() starts and can leave
+        # the OS keyboard focus off this window, silently breaking the key bindings. Reclaim it now.
         self.root.lift()
         self.root.focus_force()
 
     def _initialize_answers(self, df):
         # Load the answer data
         if os.path.exists(ANS_CSV):
-            self.answers = pd.read_csv(ANS_CSV)
+            self.answers = read_answers(ANS_CSV)
             self.answers["answer"] = self.answers["answer"].astype(object)
             self.answers["time"] = self.answers["time"].astype(float)
         else:
@@ -94,13 +83,13 @@ class App:
         columns1 = self.answers.columns.difference({"answer", "time", "index1", "index2"})
         columns2 = df.columns
         if set(columns1) != set(columns2) or not self.answers[columns1].equals(df[columns1]):
-            messagebox.showinfo("Info", f"File {ANS_CSV} has wrong format. It may help to delete it.")
-            self.close_app()
+            messagebox.showinfo("Info", f"File {ANS_CSV} has wrong format. It may help to delete it. The application will now close.")
+            self._close()
 
     def _initial_load(self):
         idx_null = self.answers[["index1", "index2"]].isnull()
         if idx_null.any().any():
-            messagebox.showinfo("Info", "Some entries are mismatched. Try to download segmentation of dataset.")
+            messagebox.showinfo("Info", "Some entries are mismatched. Try to run the app with --download.")
         else:
             # Load the first couple of images
             self._initialize_skipping()
@@ -113,13 +102,10 @@ class App:
             ("Unknown (E)", "e", self.on_unknown, 0, 2),
             ("Previous (A)", "a", self.on_prev, 1, 0),
             ("Next (S)", "s", self.on_next, 1, 1),
-            ("Next body part", None, self.next_body_part, 1, 2),
-            ("Download dataset", None, self.download_dataset_close, 2, 0),
-            ("Download segmentation", None, self.download_segmentation_close, 2, 1),
-            ("Download verification", None, self.download_verification_close, 2, 2),
-            ("Toggle heads left (R)", "r", self.on_toggle_left, 0, 3),
-            ("Toggle heads right (F)", "f", self.on_toggle_right, 1, 3),
-            ("Reset (V)", "v", self.on_reset, 2, 3),
+            (self.rules_cls.next_label, None, self.next_group, 1, 2),
+            ("Toggle heads left (R)", "r", self.on_toggle_left, 2, 0),
+            ("Toggle heads right (F)", "f", self.on_toggle_right, 2, 1),
+            ("Reset (V)", "v", self.on_reset, 2, 2),
         ]
 
     def _build_ui(self) -> None:
@@ -176,6 +162,10 @@ class App:
         for text, _, action, row, col in self._actions():
             ttk.Button(self.btn_frame, text=text, command=action).grid(row=row, column=col)
 
+    def _close(self) -> None:
+        self.closed = True
+        self.root.destroy()
+
     def _bind_keys(self) -> None:
         for _, key, action, _, _ in self._actions():
             if key is not None:
@@ -200,23 +190,15 @@ class App:
         self.plot_time = time.perf_counter()
 
     def _save_csv(self) -> None:
-        answers_save = self.answers.drop(["index1", "index2", "identity1_convert", "identity2_convert"], axis=1)
+        answers_save = self.answers.drop(["index1", "index2"], axis=1)
         answers_save.to_csv(ANS_CSV, index=False)
 
     def _set_text(self) -> None:
-        # TODO: add more information?
         self.text_box.config(state="normal")
         self.text_box.delete("1.0", "end")
-        self.text_box.insert("1.0", f"DATASET: {self.n_encounters} ENCOUNTERS, {self.n_identities} UNIQUE IDENTITIES.\n\n")
-        for matching_part, answers_subset in self.answers.groupby("matching_part"):
-            assert isinstance(matching_part, str)
-            name = matching_part.upper()
-            done = ~answers_subset["answer"].isnull()
-
-            n = len(answers_subset)
-            n_done = done.sum()
-
-            self.text_box.insert("end", f"{name} ({n}): done {n_done}.\n")
+        assert self.dataset.query is not None and self.dataset.database is not None
+        for line in self.rules.progress(self.dataset.query.metadata, self.dataset.database.metadata):
+            self.text_box.insert("end", f"{line}\n")
         self.text_box.config(state="disabled")
 
     def on_same(self, event=None) -> None:
@@ -251,69 +233,14 @@ class App:
         self._show_image(img2, "r")
         self._reset_i_lr()
 
-    def download_dataset(self, event=None) -> None:
-        confirm = messagebox.askyesno(
-            title="Download dataset",
-            message="Download may take tens of minutes. Download the dataset now? Do not close the app please. It may close automatically.",
-        )
-        if confirm:
-            self.dataset.download_dataset()
-
-    def next_body_part(self) -> None:
+    def next_group(self) -> None:
         self.skip_filled = True
-        unique_parts = self.answers["matching_part"].unique()
-        i = np.where(self.answers.iloc[self.idx]["matching_part"] == unique_parts)[0][0]
-        i = np.mod(i + 1, len(unique_parts))
-        self.idx = np.where(unique_parts[i] == self.answers["matching_part"])[0][0] - 1
+        column = self.rules.next_column
+        unique_values = self.answers[column].unique()
+        i = np.where(self.answers.iloc[self.idx][column] == unique_values)[0][0]
+        i = np.mod(i + 1, len(unique_values))
+        self.idx = np.where(unique_values[i] == self.answers[column])[0][0] - 1
         self.next()
-
-    # TODO: handle if internet not connected
-    def _download_files(self, paths: list[str], urls: list[str]) -> bool:
-        confirm = messagebox.askyesno(title="Download", message="Download the file now? Do not close the app please. It may close automatically.")
-        replaced = False
-        if confirm:
-            for path, url in zip(paths, urls):
-                base_name = os.path.basename(path)
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    path_tmp = os.path.join(tmpdir, base_name)
-                    download_file(url, path_tmp)
-                    if not os.path.exists(path_tmp):
-                        raise RuntimeError(f"Download failed for {base_name}")
-                    if not (os.path.exists(path) and filecmp.cmp(path, path_tmp, shallow=False)):
-                        path_dir = os.path.dirname(path)
-                        if path_dir != "":
-                            os.makedirs(path_dir, exist_ok=True)
-                        os.replace(path_tmp, path)
-                        replaced = True
-        self._reset_time()
-        return replaced
-
-    def download_segmentation(self) -> bool:
-        urls, paths = self.dataset.get_segmentation_files()
-        return self._download_files(paths, urls)
-
-    def download_verification(self) -> bool:
-        assert self.dataset.verification_url is not None
-        return self._download_files([DATA_CSV], [self.dataset.verification_url])
-
-    def download_segmentation_close(self) -> None:
-        replaced = self.download_segmentation()
-        self.close_app(ignore=not replaced)
-
-    def download_verification_close(self) -> None:
-        replaced = self.download_verification()
-        self.close_app(ignore=not replaced)
-
-    def download_dataset_close(self) -> None:
-        self.download_dataset()
-        self.close_app()
-
-    def close_app(self, ignore: bool = False) -> None:
-        if not ignore:
-            messagebox.showinfo("Exit", "The application will now close.")
-            self.root.destroy()
-        else:
-            messagebox.showinfo("Info", "The file is the newest one. No need to close.")
 
     def _reset_i_lr(self) -> None:
         self.i_l = 0
@@ -326,23 +253,19 @@ class App:
             self.i_r = (self.i_r + 1) % n
 
     def _toggle(self, position):
-        # TODO: "encounter1" and "encounter2" is required
         if position == "l":
-            col_encounter = "encounter1"
             dataset = self.dataset.query
             i = self.i_l
         elif position == "r":
-            col_encounter = "encounter2"
             dataset = self.dataset.database
             i = self.i_r
         else:
             raise ValueError("Position must be l or r.")
         assert dataset is not None
 
-        # TODO: do not hard-code heads and encounter_id
-        encounter = self.answers.iloc[self.idx][col_encounter]
+        column, value = self.rules.toggle_filter(self.idx, position)
         mask1 = dataset.metadata["label"] == "head"
-        mask2 = dataset.metadata["encounter_id"] == encounter
+        mask2 = dataset.metadata[column] == value
         metadata_reduced = dataset.metadata[mask1 & mask2]
         metadata_reduced = metadata_reduced.sort_values("score", ascending=False)
         index = dataset.metadata.index.get_indexer(metadata_reduced.index)
@@ -353,69 +276,14 @@ class App:
             self._update_i_lr(len(index), position)
 
     def _initialize_skipping(self):
-        self.answers["identity1_convert"] = convert_identity(self.answers, "identity1", "encounter1")
-        self.answers["identity2_convert"] = convert_identity(self.answers, "identity2", "encounter2")
-        self._graph_init()
-        self._graph_check()
-
-    @property
-    def mask_same(self):
-        return self.answers["answer"] == ANS_POS
-
-    @property
-    def mask_diff(self):
-        return self.answers["answer"] == ANS_NEG
+        self.rules = self.rules_cls(self.answers)
 
     def _update_answer(self, answer_new: str) -> None:
-        # TODO: the whole logic will break if A-B same, B-C different, A-C different and the user changes B-C to same
         answer_old = self.answers.loc[self.idx, "answer"]
-        a = self.answers.iloc[self.idx]["identity1_convert"]
-        b = self.answers.iloc[self.idx]["identity2_convert"]
-        if answer_new == ANS_POS:
-            # To keep the forest structure (no cycles), add only if not connected, otherwise, change answer to ""
-            if not nx.has_path(self.G_same, a, b):
-                self.G_same.add_edge(a, b)
-            else:
-                answer_new = ANS_UNK
-        elif answer_old == ANS_POS:
-            self.G_same.remove_edge(a, b)
-        self.answers.loc[self.idx, "answer"] = answer_new
-
-    def _graph_init(self):
-        nodes = np.unique(self.answers["identity1_convert"].to_list() + self.answers["identity2_convert"].to_list())
-        edges_same = self.answers.loc[self.mask_same, ["identity1_convert", "identity2_convert"]].to_numpy()
-
-        self.G_same = nx.Graph()
-        self.G_same.add_nodes_from(nodes.tolist())
-        self.G_same.add_edges_from(edges_same.tolist())
-
-    def _graph_check(self):
-        if not nx.is_forest(self.G_same):
-            raise ValueError("G_same must not have any cycles")
-        for _, answer in self.answers[self.mask_diff].iterrows():
-            if nx.has_path(self.G_same, answer["identity1_convert"], answer["identity2_convert"]):
-                raise ValueError("Cluster contains both same and different.")
-
-    def _answer_exists(self) -> bool:
-        # Get the identities
-        a = self.answers.iloc[self.idx]["identity1_convert"]
-        b = self.answers.iloc[self.idx]["identity2_convert"]
-
-        # If the identites are connected by same, it is predicted
-        if nx.has_path(self.G_same, a, b):
-            return True
-
-        # Extract the components where the identities belong
-        comp_a = nx.node_connected_component(self.G_same, a)
-        comp_b = nx.node_connected_component(self.G_same, b)
-
-        # Check whether identities are connected by exactly one diff
-        diff_edges = self.answers.loc[self.mask_diff, ["identity1_convert", "identity2_convert"]].to_numpy()
-        for u, v in diff_edges:
-            if (u in comp_a and v in comp_b) or (v in comp_a and u in comp_b):
-                return True
-
-        return False
+        answer, message = self.rules.update(self.idx, answer_old, answer_new)
+        self.answers.loc[self.idx, "answer"] = answer
+        if message is not None:
+            messagebox.showinfo("Info", message)
 
     def _answer_empty(self) -> bool:
         answer = self.answers.iloc[self.idx]["answer"]
@@ -423,15 +291,9 @@ class App:
 
     def _skip_plotting(self) -> bool:
         if self.skip_filled:
-            return self._answer_exists() or not self._answer_empty()
+            return self.rules.answer_exists(self.idx) or not self._answer_empty()
         else:
-            return self._answer_exists() and self._answer_empty()
-
-    def next_prev(self) -> None:
-        if self.increase:
-            self.next()
-        else:
-            self.prev()
+            return self.rules.answer_exists(self.idx) and self._answer_empty()
 
     def load_image_database(self, i: int | None = None) -> Image.Image:
         assert self.dataset.database is not None
@@ -474,23 +336,32 @@ class App:
         self.encounter_var_r.set(f"Encounter: {row['encounter2']}")
 
     def load_row(self) -> None:
-        if not (0 <= self.idx < len(self.answers)):
-            if self.skip_filled:
-                messagebox.showinfo("Info", "All turtles were identified. Either delete some rows in answers.csv or the whole file.")
-            self.root.destroy()
-            return
+        # Move to the first row which should be shown. A loop and not recursion, which fails for long skips.
+        while True:
+            if not (0 <= self.idx < len(self.answers)):
+                if self.skip_filled:
+                    messagebox.showinfo("Info", "All turtles were identified. Either delete some rows in answers.csv or the whole file.")
+                self._close()
+                return
 
-        if self._skip_plotting():
-            self.next_prev()
-            return
+            if not self._skip_plotting():
+                img1, img2 = self.load_images()
+                if img1 is not None and img2 is not None:
+                    break
 
-        img1, img2 = self.load_images()
+            if self.increase:
+                self.idx += 1
+            elif self.idx > 0:
+                self.idx -= 1
+            else:
+                # Nothing to show before, stay at the displayed row
+                self.idx = self.idx_shown
+                self._reset_time()
+                return
 
-        if img1 is None or img2 is None:
-            self.next_prev()
-            return
-
-        text = f"{self.name} image {self.idx + 1}/{len(self.answers)}"
+        self.idx_shown = self.idx
+        similarity = self.answers.iloc[self.idx]["similarity_orig"]
+        text = f"{self.name} image {self.idx + 1}/{len(self.answers)} - similarity {similarity:.0f}"
         answer = self.answers.iloc[self.idx]["answer"]
         if not pd.isnull(answer):
             text = f"{text} - {answer.upper()}"
@@ -500,6 +371,8 @@ class App:
         self._show_image(img2, "r")
         self._update_encounter_labels()
 
+        # TODO: after the first displayed row, answered rows are shown again when moving forward.
+        # In a resumed session, one unanswered row forces the user to go through all answered rows again.
         self.skip_filled = False
         self._set_text()
         self._reset_i_lr()
