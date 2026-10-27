@@ -44,6 +44,7 @@ class App:
 
         # Build UI
         self.idx = 0
+        self.idx_shown = 0
         self.increase = True
         self._build_ui()
         self._bind_keys()
@@ -354,8 +355,11 @@ class App:
             elif self.idx > 0:
                 self.idx -= 1
             else:
+                # Nothing to show before, stay at the displayed row
+                self.idx = self.idx_shown
                 return
 
+        self.idx_shown = self.idx
         similarity = self.answers.iloc[self.idx]["similarity_orig"]
         text = f"{self.name} image {self.idx + 1}/{len(self.answers)} - similarity {similarity:.0f}"
         answer = self.answers.iloc[self.idx]["answer"]
