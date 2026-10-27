@@ -138,40 +138,44 @@ class QueryDatabaseRules:
 
     def __init__(self, answers: pd.DataFrame) -> None:
         self.answers = answers
+        # Unknown database identities are distinguished by their encounters
+        self.identity2 = convert_identity(answers, "identity2", "encounter2")
         self._check()
 
     def _identified_as(self, encounter: str, exclude_idx: int | None = None) -> set[str]:
         mask = (self.answers["encounter1"] == encounter) & (self.answers["answer"] == ANS_POS)
         if exclude_idx is not None:
             mask &= self.answers.index != exclude_idx
-        return set(self.answers.loc[mask, "identity2"])
+        return set(self.identity2[mask])
 
     def _check(self) -> None:
         answers_same = self.answers[self.answers["answer"] == ANS_POS]
         for encounter, answers_encounter in answers_same.groupby("encounter1"):
-            identities = set(answers_encounter["identity2"])
+            identities = set(self.identity2[answers_encounter.index])
             if len(identities) > 1:
                 raise ValueError(f"Encounter {encounter} is identified as multiple identities: {identities}.")
 
     def answer_exists(self, idx: int) -> bool:
-        row = self.answers.iloc[idx]
+        encounter = self.answers.iloc[idx]["encounter1"]
+        identity = self.identity2.iloc[idx]
 
         # Rule 1: the encounter is already identified
-        if self._identified_as(row["encounter1"]):
+        if self._identified_as(encounter):
             return True
 
         # Rule 2: the encounter was already marked as different from this identity (possibly for another body part)
-        mask = (self.answers["encounter1"] == row["encounter1"]) & (self.answers["identity2"] == row["identity2"])
+        mask = (self.answers["encounter1"] == encounter) & (self.identity2 == identity)
         if (self.answers.loc[mask, "answer"] == ANS_NEG).any():
             return True
         return False
 
     def update(self, idx: int, answer_old: str, answer_new: str) -> str:
-        row = self.answers.iloc[idx]
+        encounter = self.answers.iloc[idx]["encounter1"]
+        identity = self.identity2.iloc[idx]
         if answer_new == ANS_POS:
             # Rule: an encounter cannot be the same as two different identities
-            identities = self._identified_as(row["encounter1"], exclude_idx=idx)
-            if identities - {row["identity2"]}:
+            identities = self._identified_as(encounter, exclude_idx=idx)
+            if identities - {identity}:
                 return ANS_UNK
         return answer_new
 
@@ -179,8 +183,9 @@ class QueryDatabaseRules:
         n_encounters = query["encounter_id"].nunique()
         n_identities = database["identity"].nunique()
         # Number of candidate identities and of identities answered as different for each encounter
-        pairs = self.answers[["encounter1", "identity2"]].drop_duplicates()
-        pairs_diff = self.answers.loc[self.answers["answer"] == ANS_NEG, ["encounter1", "identity2"]].drop_duplicates()
+        pairs_all = pd.DataFrame({"encounter1": self.answers["encounter1"], "identity2": self.identity2})
+        pairs = pairs_all.drop_duplicates()
+        pairs_diff = pairs_all[self.answers["answer"] == ANS_NEG].drop_duplicates()
         n_candidates = pairs.groupby("encounter1").size()
         n_diff = pairs_diff.groupby("encounter1").size().reindex(n_candidates.index, fill_value=0)
 
