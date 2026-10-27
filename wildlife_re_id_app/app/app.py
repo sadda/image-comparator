@@ -254,10 +254,9 @@ class App:
         assert dataset is not None
 
         # TODO: do not hard-code heads
-        col_answers, col_metadata = self.rules.toggle_columns[position]
-        value = self.answers.iloc[self.idx][col_answers]
+        column, value = self.rules.toggle_filter(self.idx, position)
         mask1 = dataset.metadata["label"] == "head"
-        mask2 = dataset.metadata[col_metadata] == value
+        mask2 = dataset.metadata[column] == value
         metadata_reduced = dataset.metadata[mask1 & mask2]
         metadata_reduced = metadata_reduced.sort_values("score", ascending=False)
         index = dataset.metadata.index.get_indexer(metadata_reduced.index)

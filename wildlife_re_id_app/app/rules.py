@@ -12,8 +12,6 @@ ANS_UNK = ""
 
 
 class MatchingRules(Protocol):
-    # Columns used for toggling: (column in answers, column in metadata)
-    toggle_columns: dict[str, tuple[str, str]]
     # Column used for jumping to the next group and the label of its button
     next_column: str
     next_label: str
@@ -21,6 +19,8 @@ class MatchingRules(Protocol):
     reject_message: str | None
 
     def __init__(self, answers: pd.DataFrame) -> None: ...
+
+    def toggle_filter(self, idx: int, position: str) -> tuple[str, str]: ...
 
     def answer_exists(self, idx: int) -> bool: ...
 
@@ -32,10 +32,6 @@ class MatchingRules(Protocol):
 class QueryQueryRules:
     """Query encounters are matched with each other. "Same" answers merge encounters into clusters."""
 
-    toggle_columns = {
-        "l": ("encounter1", "encounter_id"),
-        "r": ("encounter2", "encounter_id"),
-    }
     next_column = "matching_part"
     next_label = "Next body part"
     reject_message = None
@@ -61,6 +57,13 @@ class QueryQueryRules:
             if nx.has_path(self.G_same, a, b):
                 raise ValueError("Cluster contains both same and different.")
     
+    def toggle_filter(self, idx: int, position: str) -> tuple[str, str]:
+        # Toggle over the images of the encounter (column in metadata, value)
+        row = self.answers.iloc[idx]
+        if position == "l":
+            return "encounter_id", row["encounter1"]
+        return "encounter_id", row["encounter2"]
+
     def answer_exists(self, idx: int) -> bool:
         a = self.identity1.iloc[idx]
         b = self.identity2.iloc[idx]
@@ -126,10 +129,6 @@ class QueryQueryRules:
 class QueryDatabaseRules:
     """Query encounters are matched with database identities. Each encounter has at most one identity."""
 
-    toggle_columns = {
-        "l": ("encounter1", "encounter_id"),
-        "r": ("identity2", "identity"),
-    }
     next_column = "encounter1"
     next_label = "Next encounter"
     # TODO: it would be more helpful to provide the specific reason
@@ -154,6 +153,15 @@ class QueryDatabaseRules:
             identities = set(self.identity2[answers_encounter.index])
             if len(identities) > 1:
                 raise ValueError(f"Encounter {encounter} is identified as multiple identities: {identities}.")
+
+    def toggle_filter(self, idx: int, position: str) -> tuple[str, str]:
+        # Toggle over the images of the query encounter and of the database identity (column in metadata, value)
+        row = self.answers.iloc[idx]
+        if position == "l":
+            return "encounter_id", row["encounter1"]
+        if row["identity2"] == "unknown":
+            return "encounter_id", row["encounter2"]
+        return "identity", row["identity2"]
 
     def answer_exists(self, idx: int) -> bool:
         encounter = self.answers.iloc[idx]["encounter1"]
@@ -181,7 +189,9 @@ class QueryDatabaseRules:
 
     def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]:
         n_encounters = query["encounter_id"].nunique()
-        n_identities = database["identity"].nunique()
+        # Each unknown database encounter is a separate identity
+        mask_unknown = database["identity"] == "unknown"
+        n_identities = database.loc[~mask_unknown, "identity"].nunique() + database.loc[mask_unknown, "encounter_id"].nunique()
         # Number of candidate identities and of identities answered as different for each encounter
         pairs_all = pd.DataFrame({"encounter1": self.answers["encounter1"], "identity2": self.identity2})
         pairs = pairs_all.drop_duplicates()
