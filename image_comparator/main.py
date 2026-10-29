@@ -18,7 +18,7 @@ DATASETS = {
 
 def load_config(project: str, config_path: str | None) -> dict:
     cfg = {}
-    config_file = files("wildlife_re_id_app") / "configs" / f"{project}.json"
+    config_file = files("image_comparator") / "configs" / f"{project}.json"
     if config_file.is_file():
         cfg = json.loads(config_file.read_text())
     elif config_path is None:
@@ -60,11 +60,11 @@ def check_files(dataset: WildlifeDataset, downloads: dict[str, str], project: st
             missing.append(path)
     if missing:
         missing_str = "\n".join(missing)
-        raise SystemExit(f"Missing:\n{missing_str}\nRun 'wildlife-app {project} --download' or copy the files into {os.getcwd()}.")
+        raise SystemExit(f"Missing:\n{missing_str}\nRun 'image-comparator {project} --download' or copy the files into {os.getcwd()}.")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="wildlife-app")
+    parser = argparse.ArgumentParser(prog="image-comparator")
     parser.add_argument("project", help="Project name, such as turtles_of_smsrc.")
     parser.add_argument("--config", help="Custom config file merged into the built-in one.")
     parser.add_argument("--download", action="store_true", help="Download the dataset and the files listed in the config before starting the app.")

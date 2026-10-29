@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "wildlife-app"
+name = "image-comparator"
 version = "1.0.0"
 authors = [
   { name="Lukáš Adam", email="lukas.adam.cr@gmail.com" },
@@ -35,16 +35,16 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/sadda/wildlife-app"
+"Homepage" = "https://github.com/sadda/image-comparator"
 
 [project.scripts]
-wildlife-app = "wildlife_re_id_app.main:main"
+image-comparator = "image_comparator.main:main"
 
 [tool.setuptools.packages.find]
-include = ["wildlife_re_id_app*"]
+include = ["image_comparator*"]
 
 [tool.setuptools.package-data]
-wildlife_re_id_app = ["configs/*.json"]
+image_comparator = ["configs/*.json"]
 
 [tool.ruff]
 line-length = 250
