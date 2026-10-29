@@ -54,7 +54,7 @@ class QueryQueryRules:
         for a, b in zip(self.identity1[mask_diff], self.identity2[mask_diff]):
             if nx.has_path(self.G_same, a, b):
                 raise ValueError("Cluster contains both same and different.")
-    
+
     def toggle_filter(self, idx: int, position: str) -> tuple[str, str]:
         # Toggle over the images of the encounter (column in metadata, value)
         row = self.answers.iloc[idx]

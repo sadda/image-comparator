@@ -2,7 +2,7 @@
 
 This repo provides an app for validating whether two images depict the same individual. It is part of a large, mostly automated pipeline that takes photos of one animal species as input and outputs photos showing the same individuals.
 
-<img src="https://github.com/sadda/wildlife-app/raw/master/docs/resources/app.png" alt="App photo" width="500">
+<img src="https://github.com/sadda/image-comparator/raw/master/docs/resources/app.png" alt="App photo" width="500">
 
 ## Installation
 
@@ -40,14 +40,14 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Close the terminal and open a new one. Then run the following command, which is the same for all systems.
 
 ```
-uv tool install git+https://github.com/sadda/wildlife-app
+uv tool install git+https://github.com/sadda/image-comparator
 ```
 
 ## Updating the app
 
 Open a terminal and run
 ```
-uv tool install --reinstall git+https://github.com/sadda/wildlife-app
+uv tool install --reinstall git+https://github.com/sadda/image-comparator
 ```
 
 ## Running the app
@@ -56,12 +56,12 @@ The app stores the dataset and your answers in the folder where it is started. T
 ```
 mkdir turtles_of_smsrc
 cd turtles_of_smsrc
-wildlife-app turtles_of_smsrc --download
+image-comparator turtles_of_smsrc --download
 ```
 Next time, open a terminal and run only
 ```
 cd turtles_of_smsrc
-wildlife-app turtles_of_smsrc
+image-comparator turtles_of_smsrc
 ```
 If you run a different project than TurtlesOfSMSRC, change the project name (such as `turtlewatch_egypt`). Always run the app from the same folder, otherwise it will not find your data and answers.
 
@@ -73,7 +73,7 @@ To try the app on a small example, open a terminal and run
 ```
 mkdir example
 cd example
-wildlife-app example --download
+image-comparator example --download
 ```
 The example is a small subset of [SeaTurtleID2022](https://www.kaggle.com/datasets/wildlifedatasets/seaturtleid2022) with 6 query encounters and 4 turtles in the database. Four of the query turtles are in the database. The remaining two (`t048` and `t323`) are new individuals, so all their pairs should be answered Different. The true identity is visible in the encounter name (such as `unknown_t048`) so that you can check your answers. The example data were created by the [introduction notebook](https://github.com/sadda/turtle_re_id/blob/master/examples/introduction.ipynb).
 
