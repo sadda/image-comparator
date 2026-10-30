@@ -1,1 +1,1 @@
-from .datasets import Discovery, Example, Identification, TurtlesOfSMSRC, TurtlewatchEgypt, WildlifeDataset
+from .datasets import Discovery, Identification, TurtlesOfSMSRC, TurtlewatchEgypt, WildlifeDataset
