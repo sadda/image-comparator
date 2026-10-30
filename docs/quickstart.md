@@ -10,7 +10,7 @@ cd example
 image-comparator example --download
 ```
 
-Next time, run only
+This downloads a small subset of [SeaTurtleID2022](https://www.kaggle.com/datasets/wildlifedatasets/seaturtleid2022) with 6 query encounters and 4 turtles in the database. Four of the query turtles are in the database. The remaining two (`t048` and `t323`) are new individuals, so all their pairs should be answered **Different**. The true identity is visible in the encounter name (such as `unknown_t048`) so that you can check your answers. The first 4 pairs are wrong matches, because they show a new individual. Next time, run only
 
 ```
 cd example
@@ -20,9 +20,6 @@ image-comparator example
 !!! warning
     Always start the app from the same folder, otherwise it will not find your photos and answers. The app refuses to start in your home folder.
 
-### The example
-
-The example is a small subset of [SeaTurtleID2022](https://www.kaggle.com/datasets/wildlifedatasets/seaturtleid2022) with 6 query encounters and 4 turtles in the database. Four of the query turtles are in the database. The remaining two (`t048` and `t323`) are new individuals, so all their pairs should be answered **Different**. The true identity is visible in the encounter name (such as `unknown_t048`) so that you can check your answers. The first 4 pairs are wrong matches, because they show a new individual.
 
 ## Answering the pairs
 
@@ -47,17 +44,9 @@ The app shows a pair of photos: a query encounter on the left and a candidate on
 
 Pairs whose answer already follows from your previous answers are skipped automatically. For example, once an encounter was answered **Same**, its remaining candidates are not shown. If an answer would contradict your previous answers, it is not accepted and a message is shown. To change it, go back and change the previous answer.
 
-The text box below the photos shows the progress of the verification.
-
-### Finishing
-
-When all pairs are answered or skipped, the app shows a message and closes.
-
 ## Your answers
 
-The answers are saved after every click to `answers.csv` in the folder where the app is started. You can close the app at any time and continue later from where you left off.
-
-`answers.csv` contains all proposed pairs (the same rows as `verification_data.csv`) with two additional columns:
+The answers are saved after every click to `answers.csv` in the folder where the app is started. You can close the app at any time and continue later from where you left off. The file contains all proposed pairs with two additional columns:
 
 | Column | Content |
 |--------|---------|
