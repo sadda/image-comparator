@@ -34,8 +34,15 @@ dependencies = [
     "animal-re-id @ git+https://github.com/sadda/turtle_re_id",
 ]
 
+[project.optional-dependencies]
+docs = [
+    "mkdocs>=1.6,<2.0",
+    "mkdocs-material>=9.0",
+]
+
 [project.urls]
 "Homepage" = "https://github.com/sadda/image-comparator"
+"Documentation" = "https://sadda.github.io/image-comparator/"
 
 [project.scripts]
 image-comparator = "image_comparator.main:main"

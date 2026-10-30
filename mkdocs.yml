@@ -1,0 +1,24 @@
+site_name: Image Comparator
+repo_url: https://github.com/sadda/image-comparator
+repo_name: image-comparator
+
+theme:
+  name: "material"
+  features:
+    - navigation.sections
+    - content.code.copy
+    - content.tabs.link
+
+markdown_extensions:
+  - attr_list
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Introduction: index.md
+  - Installation: installation.md
+  - Quick start: quickstart.md
+  - Custom datasets: custom.md

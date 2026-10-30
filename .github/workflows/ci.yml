@@ -1,0 +1,15 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  docs:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/docs.yml
+    with:
+      deploy: ${{ github.event_name == 'push' }}

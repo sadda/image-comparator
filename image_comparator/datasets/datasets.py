@@ -107,19 +107,25 @@ class TurtlewatchEgypt(WildlifeDataset):
         ).wildlife_dataset
 
 
-class Example(WildlifeDataset):
-    def __init__(self, root: str, url: str) -> None:
+def _download_zip(url: str | None, root: str) -> None:
+    if url is None:
+        raise ValueError("The config does not contain url, so the dataset cannot be downloaded.")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        file_name = os.path.join(tmpdir, "data.zip")
+        utils.download_file(url, file_name)
+        with zipfile.ZipFile(file_name) as f:
+            f.extractall(root)
+
+
+class Identification(WildlifeDataset):
+    def __init__(self, root: str, url: str | None = None) -> None:
         self.root = root
         self.url = url
         self.root_query = os.path.join(root, "query")
         self.root_database = os.path.join(root, "database")
 
     def download_dataset(self) -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_name = os.path.join(tmpdir, "data.zip")
-            utils.download_file(self.url, file_name)
-            with zipfile.ZipFile(file_name) as f:
-                f.extractall(self.root)
+        _download_zip(self.url, self.root)
 
     def is_downloaded(self) -> bool:
         file_name_query = os.path.join(self.root_query, "metadata.csv")
@@ -131,3 +137,26 @@ class Example(WildlifeDataset):
 
         self.query = TurtlesFromMetadata(self.root_query, dataset_kwargs=dataset_kwargs).wildlife_dataset
         self.database = TurtlesFromMetadata(self.root_database, dataset_kwargs=dataset_kwargs).wildlife_dataset
+
+
+class Discovery(WildlifeDataset):
+    def __init__(self, root: str, url: str | None = None) -> None:
+        self.root = root
+        self.url = url
+
+    def download_dataset(self) -> None:
+        _download_zip(self.url, self.root)
+
+    def is_downloaded(self) -> bool:
+        file_name = os.path.join(self.root, "metadata.csv")
+        return os.path.exists(file_name)
+
+    def load(self) -> None:
+        dataset_kwargs = {"load_label": False}
+
+        self.query = TurtlesFromMetadata(self.root, dataset_kwargs=dataset_kwargs).wildlife_dataset
+        self.database = self.query
+
+
+class Example(Identification):
+    pass

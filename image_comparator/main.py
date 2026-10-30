@@ -6,10 +6,12 @@ from importlib.resources import files
 
 from .app import App
 from .app.app import DATA_CSV
-from .datasets import Example, TurtlesOfSMSRC, TurtlewatchEgypt, WildlifeDataset
+from .datasets import Discovery, Example, Identification, TurtlesOfSMSRC, TurtlewatchEgypt, WildlifeDataset
 from .datasets.utils import download_file
 
 DATASETS = {
+    "Identification": Identification,
+    "Discovery": Discovery,
     "Example": Example,
     "TurtlesOfSMSRC": TurtlesOfSMSRC,
     "TurtlewatchEgypt": TurtlewatchEgypt,
