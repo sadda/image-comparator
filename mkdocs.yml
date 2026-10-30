@@ -19,4 +19,5 @@ markdown_extensions:
 nav:
   - Introduction: index.md
   - Installation: installation.md
-  - Usage: usage.md
+  - Quick start: quickstart.md
+  - Custom datasets: custom.md

@@ -1,4 +1,4 @@
-# Usage
+# Quick start
 
 ## Starting the app
 
@@ -23,16 +23,6 @@ image-comparator example
 ### The example
 
 The example is a small subset of [SeaTurtleID2022](https://www.kaggle.com/datasets/wildlifedatasets/seaturtleid2022) with 6 query encounters and 4 turtles in the database. Four of the query turtles are in the database. The remaining two (`t048` and `t323`) are new individuals, so all their pairs should be answered **Different**. The true identity is visible in the encounter name (such as `unknown_t048`) so that you can check your answers. The first 4 pairs are wrong matches, because they show a new individual.
-
-### Real projects
-
-For a real project, replace `example` by the project name, such as `turtles_of_smsrc`:
-
-| Option | When to use it |
-|--------|----------------|
-| `--download` | The first time, or when you are told that a new version of the dataset is available. Downloads the photos, which may take tens of minutes, and the files for verification. |
-| `--download-files` | When only new pairs for verification are available. Skips the slow download of the photos. |
-| no option | Every other time. |
 
 ## Answering the pairs
 
@@ -65,7 +55,7 @@ When all pairs are answered or skipped, the app shows a message and closes.
 
 ## Your answers
 
-The answers are saved after every click to `answers.csv` in the project folder. You can close the app at any time and continue later from where you left off.
+The answers are saved after every click to `answers.csv` in the folder where the app is started. You can close the app at any time and continue later from where you left off.
 
 `answers.csv` contains all proposed pairs (the same rows as `verification_data.csv`) with two additional columns:
 
