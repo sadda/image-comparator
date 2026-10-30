@@ -133,3 +133,7 @@ If other people verify the pairs, upload the data and let the app download them:
         ```
         image-comparator discovery --config my_project.json
         ```
+
+The zip file is extracted into `root`. Therefore, the files and folders must be at the top level of the zip file, not inside another folder. The paths in `metadata.csv` must be relative and the photos must be inside the zip file, otherwise the annotators cannot find them.
+
+When you prepare new pairs, upload the new `verification_data.csv` to the same link. The annotators move their old `answers.csv` away and run the app with `--download-files` instead of `--download`, which downloads only `verification_data.csv` and skips the slow download of the photos.

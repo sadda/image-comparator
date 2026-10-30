@@ -23,8 +23,6 @@ cd example
 image-comparator example --download
 ```
 
-For a proper description, see the [documentation](https://sadda.github.io/image-comparator/quickstart/).
-
 Press Same (Q), Different (W) or Unknown (E) for every pair. The answers are saved to `answers.csv`.
 
 ## Documentation
