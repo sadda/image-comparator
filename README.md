@@ -18,9 +18,9 @@ See the [installation guide](https://sadda.github.io/image-comparator/installati
 The app stores the dataset and your answers in the folder where it is started. To try it on a small example, run
 
 ```
-mkdir example
-cd example
-image-comparator example --download
+mkdir example_identification
+cd example_identification
+image-comparator example_identification --download
 ```
 
 Press Same (Q), Different (W) or Unknown (E) for every pair. The answers are saved to `answers.csv`.

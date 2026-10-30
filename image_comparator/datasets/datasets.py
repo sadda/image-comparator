@@ -156,7 +156,3 @@ class Discovery(WildlifeDataset):
 
         self.query = TurtlesFromMetadata(self.root, dataset_kwargs=dataset_kwargs).wildlife_dataset
         self.database = self.query
-
-
-class Example(Identification):
-    pass

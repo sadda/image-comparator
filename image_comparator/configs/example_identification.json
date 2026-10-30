@@ -1,0 +1,8 @@
+{
+  "dataset": "Identification",
+  "root": "data",
+  "url": "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/Example/data_identification.zip",
+  "downloads": {
+    "verification_data.csv": "https://raw.githubusercontent.com/sadda/wildlife-labels/refs/heads/main/Example/verification_data_identification.csv"
+  }
+}
