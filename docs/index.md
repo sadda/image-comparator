@@ -16,8 +16,3 @@ The computer does the time-consuming search through all photos. You only check a
 - **Skips pairs whose answer is already known** from your previous answers.
 - **Prevents contradictions** between your answers.
 - **Saves every answer immediately**, so you can close the app at any time and continue later.
-
-## Next steps
-
-- [Installation](installation.md) of the app.
-- [Usage](usage.md): running the app and answering the pairs.
