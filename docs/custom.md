@@ -1,83 +1,135 @@
 # Custom datasets
 
-The built-in projects (`example`, `turtles_of_smsrc`, `turtlewatch_egypt`) download everything they need. To verify your own photos, you describe your dataset in a config file. No coding is needed.
+The provided example downloads everything it needs. To verify your own photos, you describe your dataset in a config file. No coding is needed.
+
+## Identification and discovery
+
+The app supports two types of tasks:
+
+- **Identification**: For established databases, where new images are to be matched with existing individuals.
+- **Discovery**: For new projects with not established database, where query images are matched among themselves.
 
 ## What the app needs
 
-The app uses the files created by [animal_re_id](https://github.com/sadda/turtle_re_id) in its [introduction notebook](https://colab.research.google.com/github/sadda/turtle_re_id/blob/master/examples/introduction.ipynb):
+The app uses the files created by [animal_re_id](https://github.com/sadda/turtle_re_id), for example in its [introduction notebook](https://colab.research.google.com/github/sadda/turtle_re_id/blob/master/examples/introduction.ipynb):
 
-- **Photos**: the folder with the `query` and `database` subfolders (`data` in the notebook), including `metadata.csv` and `segmentation.csv` created by the notebook. Do not change them after the pairs were created, otherwise the app reports that some entries are mismatched.
-- **Pairs**: `verification_data.csv` exported by the notebook. Copy it to the folder where the app is started. It must keep this name.
+- **Photos**: `metadata.csv` and `segmentation.csv` created by animal_re_id. The data structure must be the same as the one passed to animal_re_id. The photos are usually in the local `data` folder, but can be anywhere by using the config below.
+- **Pairs**: `verification_data.csv` exported by animal_re_id. Copy it to the folder where the app is started.
 
 The app creates `answers.csv` in the folder where it is started. Use a separate folder for every dataset.
 
-## Config file
+## Running the app
 
-Create a config file, for example `my_project.json`:
+The app has two built-in configs, `identification` and `discovery`, which read the data from the folder `data`. The tabs below show the commands for both. Selecting a tab switches all tabs on this page. To start the app, run
 
-```json
-{
-  "dataset": "Example",
-  "root": "/path/to/turtle_re_id/examples/data",
-  "url": null
-}
-```
+=== "Identification"
+
+    ```
+    image-comparator identification
+    ```
+
+    The folder `data` contains the folders `query` and `database`, each containing `metadata.csv` and `segmentation.csv`.
+
+=== "Discovery"
+
+    ```
+    image-comparator discovery
+    ```
+
+    The folder `data` contains `metadata.csv` and `segmentation.csv`.
+
+## Custom config
+
+If the data are elsewhere, create a config file, for example `my_project.json`, with the path to the data and run the app with it:
+
+=== "Identification"
+
+    ```json
+    {
+      "root": "/path/to/turtle_re_id/examples/data"
+    }
+    ```
+
+    ```
+    image-comparator identification --config my_project.json
+    ```
+
+=== "Discovery"
+
+    ```json
+    {
+      "root": "/path/to/my/query"
+    }
+    ```
+
+    ```
+    image-comparator discovery --config my_project.json
+    ```
+
+The config file is merged into the built-in config, so it only needs the keys you want to change:
 
 | Key | Meaning |
 |-----|---------|
-| `dataset` | Type of the dataset. `Example` is a general dataset with a `query` and a `database` folder. |
-| `root` | Folder containing `query` and `database`. A relative path is relative to the folder where the app is started. |
-| `url` | Link to a zip file with the `query` and `database` folders, downloaded by `--download`. Use `null` if the data are already in place. |
+| `root` | Folder with the data described in [Identification and discovery](#identification-and-discovery). A relative path is relative to the folder where the app is started. Default `data`. |
+| `url` | Optional. Link to a zip file with the content of `root`, downloaded by `--download`. |
 | `downloads` | Optional. Files downloaded by `--download` and `--download-files`, as `{"path": "link"}`. |
-
-Then start the app from the folder with `verification_data.csv`:
-
-```
-image-comparator my_project --config my_project.json
-```
-
-The first argument is only a name. For a name that is not a built-in project, `--config` is required.
 
 ## Sharing a dataset with annotators
 
 If other people verify the pairs, upload the data and let the app download them:
 
-1. Zip the `query` and `database` folders into one file and upload it.
-2. Upload `verification_data.csv`.
-3. Send the annotators the config file with both links:
+=== "Identification"
 
-```json
-{
-  "dataset": "Example",
-  "root": "data",
-  "url": "https://example.org/my_project/data.zip",
-  "downloads": {
-    "verification_data.csv": "https://example.org/my_project/verification_data.csv"
-  }
-}
-```
+    1. Zip the folders `query` and `database` into one file and upload it.
+    2. Upload `verification_data.csv`.
+    3. Send the annotators the config file with both links:
 
-The annotators save the config file in an empty folder and run there
+    ```json
+    {
+      "url": "https://example.org/my_project/data.zip",
+      "downloads": {
+        "verification_data.csv": "https://example.org/my_project/verification_data.csv"
+      }
+    }
+    ```
 
-```
-image-comparator my_project --config my_project.json --download
-```
+    The annotators save the config file in an empty folder and run there
 
-When you prepare new pairs, upload the new `verification_data.csv` to the same link. The annotators move their old `answers.csv` away and run the app with `--download-files`, which skips the download of the photos.
+    ```
+    image-comparator identification --config my_project.json --download
+    ```
 
-## Changing a built-in project
+    !!! warning
+        The option `--download` downloads the data, which may take long. Use it only the first time. Next time, run in the same folder only
 
-The config file is merged into the config of a built-in project. Only the keys in your file are changed. For example, to store the example data in another folder, create `my_example.json` with
+        ```
+        image-comparator identification --config my_project.json
+        ```
 
-```json
-{
-  "root": "/path/to/my/data"
-}
-```
+=== "Discovery"
 
-and run `image-comparator example --config my_example.json`. The built-in configs are in [image_comparator/configs](https://github.com/sadda/image-comparator/tree/master/image_comparator/configs).
+    1. Zip `metadata.csv`, `segmentation.csv` and the photos into one file and upload it.
+    2. Upload `verification_data.csv`.
+    3. Send the annotators the config file with both links:
 
-## Limitations
+    ```json
+    {
+      "url": "https://example.org/my_project/data.zip",
+      "downloads": {
+        "verification_data.csv": "https://example.org/my_project/verification_data.csv"
+      }
+    }
+    ```
 
-- The `Example` dataset type always compares the query with the database (identification). Discovery, where the query is compared with itself, is available only for the built-in `turtles_of_smsrc` project.
-- Other folder structures need a new dataset type in the code. It is a subclass of `WildlifeDataset` in `image_comparator/datasets/datasets.py` with the methods `download_dataset`, `is_downloaded` and `load`, registered in `DATASETS` in `image_comparator/main.py`. If `load` sets `query` and `database` to the same dataset, the app uses discovery.
+    The annotators save the config file in an empty folder and run there
+
+    ```
+    image-comparator discovery --config my_project.json --download
+    ```
+
+    !!! warning
+        The option `--download` downloads the data, which may take long. Use it only the first time. Next time, run in the same folder only
+
+        ```
+        image-comparator discovery --config my_project.json
+        ```
