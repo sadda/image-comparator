@@ -6,8 +6,8 @@ The provided example downloads everything it needs. To verify your own photos, y
 
 The app supports two types of tasks:
 
-- **Identification**: For established databases, where new images are to be matched with existing individuals.
-- **Discovery**: For new projects with not established database, where query images are matched among themselves.
+- **Identification**: for projects with an established database, where new photos are matched with known individuals.
+- **Discovery**: for new projects without an established database, where new photos are matched among themselves.
 
 ## What the app needs
 
@@ -70,7 +70,7 @@ The config file is merged into the built-in config, so it only needs the keys yo
 
 | Key | Meaning |
 |-----|---------|
-| `root` | Folder with the data described in [Identification and discovery](#identification-and-discovery). A relative path is relative to the folder where the app is started. Default `data`. |
+| `root` | Folder with the data described in [Running the app](#running-the-app). A relative path is relative to the folder where the app is started. Default `data`. |
 | `url` | Optional. Link to a zip file with the content of `root`, downloaded by `--download`. |
 | `downloads` | Optional. Files downloaded by `--download` and `--download-files`, as `{"path": "link"}`. |
 
@@ -100,7 +100,7 @@ If other people verify the pairs, upload the data and let the app download them:
     ```
 
     !!! warning
-        The option `--download` downloads the data, which may take long. Use it only the first time. Next time, run in the same folder only
+        The option `--download` downloads the data, which may take a long time. Use it only the first time. Next time, run in the same folder only
 
         ```
         image-comparator identification --config my_project.json
@@ -128,7 +128,7 @@ If other people verify the pairs, upload the data and let the app download them:
     ```
 
     !!! warning
-        The option `--download` downloads the data, which may take long. Use it only the first time. Next time, run in the same folder only
+        The option `--download` downloads the data, which may take a long time. Use it only the first time. Next time, run in the same folder only
 
         ```
         image-comparator discovery --config my_project.json

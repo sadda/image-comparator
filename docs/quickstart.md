@@ -20,7 +20,6 @@ image-comparator example
 !!! warning
     Always start the app from the same folder, otherwise it will not find your photos and answers. The app refuses to start in your home folder.
 
-
 ## Answering the pairs
 
 The app shows a pair of photos: a query encounter on the left and a candidate on the right. An **encounter** is a group of photos of one animal taken at one occasion, for example on one day. The title shows the number of the pair and the similarity (the number of matched keypoints). Decide whether the two photos show the same individual.
