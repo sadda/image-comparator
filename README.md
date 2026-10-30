@@ -1,6 +1,7 @@
 <p align="center">
   <a href="https://github.com/sadda/image-comparator/actions/workflows/ci.yml"><img src="https://github.com/sadda/image-comparator/actions/workflows/ci.yml/badge.svg" alt="sadda/image-comparator CI"></a>
   <a href="https://sadda.github.io/image-comparator/"><img src="https://img.shields.io/badge/docs-online-blue" alt="Documentation"></a>
+  <a href="https://github.com/sadda/image-comparator/blob/master/LICENSE"><img src="https://img.shields.io/github/license/sadda/image-comparator" alt="License"></a>
 </p>
 
 # Image Comparator
