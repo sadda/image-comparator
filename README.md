@@ -23,10 +23,10 @@ cd example
 image-comparator example --download
 ```
 
-For a proper description, see the [documentation]((https://sadda.github.io/image-comparator/usage/)).
+For a proper description, see the [documentation](https://sadda.github.io/image-comparator/usage/).
 
 Press Same (Q), Different (W) or Unknown (E) for every pair. The answers are saved to `answers.csv`.
 
 ## Documentation
 
-The [documentation](https://sadda.github.io/image-comparator/) explains how to run the app for real projects, the two modes (identification and discovery), all buttons and the format of the answers.
+The [documentation](https://sadda.github.io/image-comparator/) explains how to run the app for real projects, all buttons and the format of the answers.

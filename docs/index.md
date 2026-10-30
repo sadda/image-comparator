@@ -10,18 +10,11 @@ The computer does the time-consuming search through all photos. You only check a
 
 <img src="resources/app.png" alt="Image Comparator" width="600">
 
-## Two modes
-
-- **Identification**: new photos are compared with a database of known individuals. Every new encounter gets a known identity or is marked as new.
-- **Discovery**: new photos are compared with each other. Encounters of the same individual are grouped together, so that each group can be given a new identity.
-
-See [Identification and discovery](usage.md#identification-and-discovery) for details.
-
 ## What the app does for you
 
 - **Shows the pairs one by one**, ordered from the most promising, together with the body part (for example the head) that produced the match.
 - **Skips pairs whose answer is already known** from your previous answers.
-- **Prevents contradictions**, for example an encounter answered as the same individual as two different identities.
+- **Prevents contradictions** between your answers.
 - **Saves every answer immediately**, so you can close the app at any time and continue later.
 
 ## Next steps
