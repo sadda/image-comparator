@@ -46,7 +46,7 @@ If the data are elsewhere, create a config file, for example `my_project.json`, 
 
     ```json
     {
-      "root": "/path/to/turtle_re_id/examples/data"
+      "root": "/path/to/turtle_re_id/examples/data_identification"
     }
     ```
 
