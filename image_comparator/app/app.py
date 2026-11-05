@@ -3,15 +3,17 @@ import time
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import messagebox, ttk
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageTk
 
-from ..datasets import WildlifeDataset
-from .rules import ANS_NEG, ANS_POS, ANS_UNK, MatchingRules, QueryDatabaseRules, QueryQueryRules
+from .rules import ANS_NEG, ANS_POS, ANS_UNK
 from .utils import read_answers
+
+if TYPE_CHECKING:
+    from ..datasets import WildlifeDataset
 
 DATA_CSV = "verification_data.csv"
 ANS_CSV = "answers.csv"
@@ -19,7 +21,7 @@ CANVAS_SIZE = 400
 
 
 class App:
-    def __init__(self, root: tk.Tk, dataset: WildlifeDataset, name: str) -> None:
+    def __init__(self, root: tk.Tk, dataset: "WildlifeDataset", name: str) -> None:
         self.root = root
         self.root.title("Image Comparator")
         self.dataset = dataset
@@ -37,11 +39,7 @@ class App:
 
         # Select the rules for skipping and navigation
         assert self.dataset.database is not None
-        self.rules_cls: type[MatchingRules]
-        if self.dataset.query.metadata.equals(self.dataset.database.metadata):
-            self.rules_cls = QueryQueryRules
-        else:
-            self.rules_cls = QueryDatabaseRules
+        self.rules_cls = self.dataset.rules_cls
 
         # Build UI
         self.idx = 0
