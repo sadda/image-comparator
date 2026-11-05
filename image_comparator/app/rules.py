@@ -208,3 +208,48 @@ class QueryDatabaseRules:
             "",
             f"ENCOUNTERS ({n}): identified {n_identified}, new {n_new}, open {n_open}.",
         ]
+
+
+class ImageImageRules:
+    """Images are matched with each other. An answer is valid only for its pair of images, not for their encounters or identities."""
+
+    next_column = "image_id1"
+    next_label = "Next image"
+
+    def __init__(self, answers: pd.DataFrame) -> None:
+        self.answers = answers
+        # The same pair of images may appear for multiple body parts and in both orders
+        image_ids = answers[["image_id1", "image_id2"]].astype(str)
+        image_id_min = image_ids.min(axis=1)
+        image_id_max = image_ids.max(axis=1)
+        self.pair = image_id_min + "_" + image_id_max
+
+    def toggle_filter(self, idx: int, position: str) -> tuple[str, str]:
+        # Toggle over the images of the encounter (column in metadata, value)
+        row = self.answers.iloc[idx]
+        if position == "l":
+            return "encounter_id", row["encounter1"]
+        return "encounter_id", row["encounter2"]
+
+    def answer_exists(self, idx: int) -> bool:
+        # Rule: the same pair of images was already answered (possibly for another body part)
+        mask = self.pair == self.pair.iloc[idx]
+        return bool(self.answers.loc[mask, "answer"].isin([ANS_POS, ANS_NEG]).any())
+
+    def update(self, idx: int, answer_old: str, answer_new: str) -> tuple[str, str | None]:
+        return answer_new, None
+
+    def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]:
+        n_images = self.answers["image_id1"].nunique()
+        mask_decided = self.answers["answer"].isin([ANS_POS, ANS_NEG])
+        decided = self.pair.isin(self.pair[mask_decided])
+        n = len(self.answers)
+        n_answered = self.answers["answer"].notnull().sum()
+        n_decided = decided.sum()
+        n_same = self.answers.loc[self.answers["answer"] == ANS_POS, "image_id1"].nunique()
+        return [
+            f"IMAGES: {n_images}.",
+            "",
+            f"PAIRS ({n}): answered {n_answered}, decided {n_decided}.",
+            f"IMAGES WITH A SAME ANSWER: {n_same}.",
+        ]
