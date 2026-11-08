@@ -21,7 +21,7 @@ The app stores the dataset and your answers in the folder where it is started. T
 ```
 mkdir example_identification
 cd example_identification
-image-comparator example_identification --download
+image-comparator identification --download
 ```
 
 Press Same (Q), Different (W) or Unknown (E) for every pair. The answers are saved to `answers.csv`.

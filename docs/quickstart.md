@@ -7,7 +7,7 @@ The app stores the photos and your answers in the folder where it is started. Th
 ```
 mkdir example_identification
 cd example_identification
-image-comparator example_identification --download
+image-comparator identification --download
 ```
 
 This downloads a small subset of [SeaTurtleID2022](https://www.kaggle.com/datasets/wildlifedatasets/seaturtleid2022) with 6 query encounters and 4 turtles in the database. Four of the query turtles are in the database. The remaining two are new individuals, so all their pairs should be answered **Different**. To check your answers, the true identities of the query encounters are:
@@ -25,7 +25,7 @@ The first 4 pairs are wrong matches, because they show a new individual. Next ti
 
 ```
 cd example_identification
-image-comparator example_identification
+image-comparator identification
 ```
 
 !!! warning
@@ -38,7 +38,7 @@ The second example compares 10 encounters with each other instead of with a data
 ```
 mkdir example_discovery
 cd example_discovery
-image-comparator example_discovery --download
+image-comparator discovery --download
 ```
 
 The 10 encounters show 6 turtles. Four turtles were seen twice: `2018-06-22/1` and `2018-08-22/1`, `2019-09-01/1` and `2019-09-02/1`, `2019-09-01/2` and `2021-06-22/1`, and `2019-09-04/1` and `2021-06-27/1`. All other pairs should be answered **Different**.
