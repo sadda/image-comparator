@@ -71,8 +71,8 @@ The config file is merged into the built-in config, so it only needs the keys yo
 | Key | Meaning |
 |-----|---------|
 | `root` | Folder with the data described in [Running the app](#running-the-app). A relative path is relative to the folder where the app is started. Default `data`. |
-| `url` | Link to a zip file with the content of `root`, downloaded by `--download`. Default: the example dataset. |
-| `downloads` | Files downloaded by `--download` and `--download-files`, as `{"path": "link"}`. Default: `verification_data.csv` of the example dataset. |
+| `url` | Optional. Link to a zip file with the content of `root`, downloaded by `--download`. |
+| `downloads` | Optional. Files downloaded by `--download` and `--download-files`, as `{"path": "link"}`. |
 
 ## Sharing a dataset with annotators
 
