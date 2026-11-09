@@ -3,23 +3,26 @@ import time
 import tkinter as tk
 from collections.abc import Callable
 from tkinter import messagebox, ttk
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageTk
 
-from ..datasets import WildlifeDataset
-from .rules import ANS_NEG, ANS_POS, ANS_UNK, MatchingRules, QueryDatabaseRules, QueryQueryRules
+from .rules import ANS_NEG, ANS_POS, ANS_UNK
 from .utils import read_answers
+
+if TYPE_CHECKING:
+    from ..datasets import WildlifeDataset
 
 DATA_CSV = "verification_data.csv"
 ANS_CSV = "answers.csv"
+NEXT_LABELS = {"encounter1": "Next encounter", "matching_part": "Next body part"}
 CANVAS_SIZE = 400
 
 
 class App:
-    def __init__(self, root: tk.Tk, dataset: WildlifeDataset, name: str) -> None:
+    def __init__(self, root: tk.Tk, dataset: "WildlifeDataset", name: str) -> None:
         self.root = root
         self.root.title("Image Comparator")
         self.dataset = dataset
@@ -37,11 +40,7 @@ class App:
 
         # Select the rules for skipping and navigation
         assert self.dataset.database is not None
-        self.rules_cls: type[MatchingRules]
-        if self.dataset.query.metadata.equals(self.dataset.database.metadata):
-            self.rules_cls = QueryQueryRules
-        else:
-            self.rules_cls = QueryDatabaseRules
+        self.rules_cls = self.dataset.rules_cls
 
         # Build UI
         self.idx = 0
@@ -102,11 +101,16 @@ class App:
             ("Unknown (E)", "e", self.on_unknown, 0, 2),
             ("Previous (A)", "a", self.on_prev, 1, 0),
             ("Next (S)", "s", self.on_next, 1, 1),
-            (self.rules_cls.next_label, None, self.next_group, 1, 2),
+            (self._next_label(), None, self.next_group, 1, 2),
             ("Toggle heads left (R)", "r", self.on_toggle_left, 2, 0),
             ("Toggle heads right (F)", "f", self.on_toggle_right, 2, 1),
             ("Reset (V)", "v", self.on_reset, 2, 2),
         ]
+
+    def _next_label(self) -> str:
+        if self.dataset.next_column is None:
+            return "Next group"
+        return NEXT_LABELS[self.dataset.next_column]
 
     def _build_ui(self) -> None:
         # Main container
@@ -160,7 +164,10 @@ class App:
         self.text_box.pack(fill="both", expand=True)
 
         for text, _, action, row, col in self._actions():
-            ttk.Button(self.btn_frame, text=text, command=action).grid(row=row, column=col)
+            button = ttk.Button(self.btn_frame, text=text, command=action)
+            button.grid(row=row, column=col)
+            if action == self.next_group and self.dataset.next_column is None:
+                button.state(["disabled"])
 
     def _close(self) -> None:
         self.closed = True
@@ -235,7 +242,9 @@ class App:
 
     def next_group(self) -> None:
         self.skip_filled = True
-        column = self.rules.next_column
+        column = self.dataset.next_column
+        if column is None:
+            return
         unique_values = self.answers[column].unique()
         i = np.where(self.answers.iloc[self.idx][column] == unique_values)[0][0]
         i = np.mod(i + 1, len(unique_values))
@@ -276,7 +285,7 @@ class App:
             self._update_i_lr(len(index), position)
 
     def _initialize_skipping(self):
-        self.rules = self.rules_cls(self.answers)
+        self.rules = self.rules_cls(self.answers, self.dataset.query, self.dataset.database)
 
     def _update_answer(self, answer_new: str) -> None:
         answer_old = self.answers.loc[self.idx, "answer"]

@@ -2,12 +2,13 @@
 
 The provided example downloads everything it needs. To verify your own photos, you describe your dataset in a config file. No coding is needed.
 
-## Identification and discovery
+## Identification, discovery and errors
 
-The app supports two types of tasks:
+The app supports three types of tasks:
 
 - **Identification**: for projects with an established database, where new photos are matched with known individuals.
 - **Discovery**: for new projects without an established database, where new photos are matched among themselves.
+- **Errors**: for checking existing labels, where pairs of photos are verified one by one. An answer applies only to its pair of photos, not to their encounters or individuals. The data are the same as for discovery.
 
 ## What the app needs
 
@@ -20,7 +21,7 @@ The app creates `answers.csv` in the folder where it is started. Use a separate 
 
 ## Running the app
 
-The app has two built-in configs, `identification` and `discovery`, which read the data from the folder `data`. The tabs below show the commands for both. Selecting a tab switches all tabs on this page. To start the app, run
+The app has three built-in configs, `identification`, `discovery` and `errors`, which read the data from the folder `data`. The tabs below show the commands for all of them. Selecting a tab switches all tabs on this page. To start the app, run
 
 === "Identification"
 
@@ -34,6 +35,14 @@ The app has two built-in configs, `identification` and `discovery`, which read t
 
     ```
     image-comparator discovery
+    ```
+
+    The folder `data` contains `metadata.csv` and `segmentation.csv`.
+
+=== "Errors"
+
+    ```
+    image-comparator errors
     ```
 
     The folder `data` contains `metadata.csv` and `segmentation.csv`.
@@ -64,6 +73,18 @@ If the data are elsewhere, create a config file, for example `my_project.json`, 
 
     ```
     image-comparator discovery --config my_project.json
+    ```
+
+=== "Errors"
+
+    ```json
+    {
+      "root": "/path/to/my/query"
+    }
+    ```
+
+    ```
+    image-comparator errors --config my_project.json
     ```
 
 The config file is merged into the built-in config, so it only needs the keys you want to change:
@@ -132,6 +153,34 @@ If other people verify the pairs, upload the data and let the app download them:
 
         ```
         image-comparator discovery --config my_project.json
+        ```
+
+=== "Errors"
+
+    1. Zip `metadata.csv`, `segmentation.csv` and the photos into one file and upload it.
+    2. Upload `verification_data.csv`.
+    3. Send the annotators the config file with both links:
+
+    ```json
+    {
+      "url": "https://example.org/my_project/data.zip",
+      "downloads": {
+        "verification_data.csv": "https://example.org/my_project/verification_data.csv"
+      }
+    }
+    ```
+
+    The annotators save the config file in an empty folder and run there
+
+    ```
+    image-comparator errors --config my_project.json --download
+    ```
+
+    !!! warning
+        The option `--download` downloads the data, which may take a long time. Use it only the first time. Next time, run in the same folder only
+
+        ```
+        image-comparator errors --config my_project.json
         ```
 
 The zip file is extracted into `root`. Therefore, the files and folders must be at the top level of the zip file, not inside another folder. The paths in `metadata.csv` must be relative and the photos must be inside the zip file, otherwise the annotators cannot find them.

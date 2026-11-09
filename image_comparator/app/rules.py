@@ -3,6 +3,7 @@ from typing import Protocol
 import networkx as nx
 import numpy as np
 import pandas as pd
+from wildlife_datasets.datasets import WildlifeDataset
 
 from .utils import convert_identity
 
@@ -12,11 +13,7 @@ ANS_UNK = ""
 
 
 class MatchingRules(Protocol):
-    # Column used for jumping to the next group and the label of its button
-    next_column: str
-    next_label: str
-
-    def __init__(self, answers: pd.DataFrame) -> None: ...
+    def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None: ...
 
     def toggle_filter(self, idx: int, position: str) -> tuple[str, str]: ...
 
@@ -31,10 +28,7 @@ class MatchingRules(Protocol):
 class QueryQueryRules:
     """Query encounters are matched with each other. "Same" answers merge encounters into clusters."""
 
-    next_column = "matching_part"
-    next_label = "Next body part"
-
-    def __init__(self, answers: pd.DataFrame) -> None:
+    def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None:
         self.answers = answers
         self.identity1 = convert_identity(answers, "identity1", "encounter1")
         self.identity2 = convert_identity(answers, "identity2", "encounter2")
@@ -128,10 +122,7 @@ class QueryQueryRules:
 class QueryDatabaseRules:
     """Query encounters are matched with database identities. Each encounter has at most one identity."""
 
-    next_column = "encounter1"
-    next_label = "Next encounter"
-
-    def __init__(self, answers: pd.DataFrame) -> None:
+    def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None:
         self.answers = answers
         # Unknown database identities are distinguished by their encounters
         self.identity2 = convert_identity(answers, "identity2", "encounter2")
@@ -207,4 +198,51 @@ class QueryDatabaseRules:
             f"QUERY: {n_encounters} ENCOUNTERS. DATABASE: {n_identities} IDENTITIES.",
             "",
             f"ENCOUNTERS ({n}): identified {n_identified}, new {n_new}, open {n_open}.",
+        ]
+
+
+class ImageImageRules:
+    """Images are matched with each other. An answer is valid only for its pair of images, not for their encounters or identities."""
+
+    def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None:
+        self.answers = answers
+        # The same pair of images may appear for multiple body parts and in both orders
+        # image_id differs for each body part, so the images are identified by their paths
+        # index1 and index2 were computed by get_index when the answers were loaded
+        pairs = []
+        for index1, index2 in zip(answers["index1"], answers["index2"]):
+            path1 = query.metadata.loc[index1, "path"]
+            path2 = database.metadata.loc[index2, "path"]
+            path_min, path_max = sorted([path1, path2])
+            pairs.append(path_min + "|" + path_max)
+        self.pair = pd.Series(pairs, index=answers.index)
+
+    def toggle_filter(self, idx: int, position: str) -> tuple[str, str]:
+        # Toggle over the images of the encounter (column in metadata, value)
+        row = self.answers.iloc[idx]
+        if position == "l":
+            return "encounter_id", row["encounter1"]
+        return "encounter_id", row["encounter2"]
+
+    def answer_exists(self, idx: int) -> bool:
+        # Rule: the same pair of images was already answered (possibly for another body part)
+        mask = self.pair == self.pair.iloc[idx]
+        return bool(self.answers.loc[mask, "answer"].isin([ANS_POS, ANS_NEG]).any())
+
+    def update(self, idx: int, answer_old: str, answer_new: str) -> tuple[str, str | None]:
+        return answer_new, None
+
+    def progress(self, query: pd.DataFrame, database: pd.DataFrame) -> list[str]:
+        n_images = self.answers["image_id1"].nunique()
+        mask_decided = self.answers["answer"].isin([ANS_POS, ANS_NEG])
+        decided = self.pair.isin(self.pair[mask_decided])
+        n = len(self.answers)
+        n_answered = self.answers["answer"].notnull().sum()
+        n_decided = decided.sum()
+        n_same = self.answers.loc[self.answers["answer"] == ANS_POS, "image_id1"].nunique()
+        return [
+            f"IMAGES: {n_images}.",
+            "",
+            f"PAIRS ({n}): answered {n_answered}, decided {n_decided}.",
+            f"IMAGES WITH A SAME ANSWER: {n_same}.",
         ]
