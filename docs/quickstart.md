@@ -43,6 +43,16 @@ image-comparator example_discovery --download
 
 The 10 encounters show 6 turtles. Four turtles were seen twice: `2018-06-22/1` and `2018-08-22/1`, `2019-09-01/1` and `2019-09-02/1`, `2019-09-01/2` and `2021-06-22/1`, and `2019-09-04/1` and `2021-06-27/1`. All other pairs should be answered **Different**.
 
+### Example for errors
+
+The third example checks existing labels pair by pair. Each answer applies only to the shown pair of photos
+
+```
+mkdir example_errors
+cd example_errors
+image-comparator example_errors --download
+```
+
 ## Answering the pairs
 
 The app shows a pair of photos: a query encounter on the left and a candidate on the right. An **encounter** is a group of photos of one animal taken at one occasion, for example on one day. The title shows the number of the pair and the similarity (the number of matched keypoints). Decide whether the two photos show the same individual.
@@ -54,7 +64,7 @@ The app shows a pair of photos: a query encounter on the left and a candidate on
 | **Unknown** | E | You cannot decide. The pair stays unanswered. |
 | **Previous** | A | Go back to the previous pair, for example to change an answer. |
 | **Next** | S | Go to the next pair without answering. |
-| **Next encounter** / **Next body part** | – | Jump to the first unanswered pair of the next encounter or body part. |
+| **Next encounter** / **Next body part** | – | Jump to the first unanswered pair of the next encounter (identification) or body part. Disabled as **Next group** for discovery and errors. |
 | **Toggle heads left / right** | R / F | Show other head photos of the left or right individual. |
 | **Reset** | V | Show the original pair again. |
 
@@ -64,7 +74,7 @@ The app shows a pair of photos: a query encounter on the left and a candidate on
 !!! tip
     Answer **Unknown** if you are not sure. An unanswered pair is better than a wrong answer.
 
-Pairs whose answer already follows from your previous answers are skipped automatically. For example, once an encounter was answered **Same**, its remaining candidates are not shown. If an answer would contradict your previous answers, it is not accepted and a message is shown. To change it, go back and change the previous answer.
+Pairs whose answer already follows from your previous answers are skipped automatically. For example, once an encounter was answered **Same**, its remaining candidates are not shown. If an answer would contradict your previous answers, it is not accepted and a message is shown. To change it, go back and change the previous answer. For errors, only pairs with the same two photos are skipped, for example the same photos shown for another body part.
 
 ## Your answers
 
