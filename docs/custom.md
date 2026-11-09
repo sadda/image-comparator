@@ -2,13 +2,13 @@
 
 The provided example downloads everything it needs. To verify your own photos, you describe your dataset in a config file. No coding is needed.
 
-## Identification, discovery and errors
+## Identification, discovery and error detection
 
 The app supports three types of tasks:
 
 - **Identification**: for projects with an established database, where new photos are matched with known individuals.
 - **Discovery**: for new projects without an established database, where new photos are matched among themselves.
-- **Errors**: for checking existing labels, where pairs of photos are verified one by one. An answer applies only to its pair of photos, not to their encounters or individuals. The data are the same as for discovery.
+- **Error detection**: for checking existing labels, where pairs of photos are verified one by one. An answer applies only to its pair of photos, not to their encounters or individuals. The data are the same as for discovery.
 
 ## What the app needs
 
@@ -39,7 +39,7 @@ The app has three built-in configs, `identification`, `discovery` and `errors`, 
 
     The folder `data` contains `metadata.csv` and `segmentation.csv`.
 
-=== "Errors"
+=== "Error detection"
 
     ```
     image-comparator errors
@@ -75,7 +75,7 @@ If the data are elsewhere, create a config file, for example `my_project.json`, 
     image-comparator discovery --config my_project.json
     ```
 
-=== "Errors"
+=== "Error detection"
 
     ```json
     {
@@ -155,7 +155,7 @@ If other people verify the pairs, upload the data and let the app download them:
         image-comparator discovery --config my_project.json
         ```
 
-=== "Errors"
+=== "Error detection"
 
     1. Zip `metadata.csv`, `segmentation.csv` and the photos into one file and upload it.
     2. Upload `verification_data.csv`.
