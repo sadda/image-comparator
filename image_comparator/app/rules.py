@@ -3,6 +3,7 @@ from typing import Protocol
 import networkx as nx
 import numpy as np
 import pandas as pd
+from wildlife_datasets.datasets import WildlifeDataset
 
 from .utils import convert_identity
 
@@ -16,7 +17,7 @@ class MatchingRules(Protocol):
     next_column: str
     next_label: str
 
-    def __init__(self, answers: pd.DataFrame) -> None: ...
+    def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None: ...
 
     def toggle_filter(self, idx: int, position: str) -> tuple[str, str]: ...
 
@@ -34,7 +35,7 @@ class QueryQueryRules:
     next_column = "matching_part"
     next_label = "Next body part"
 
-    def __init__(self, answers: pd.DataFrame) -> None:
+    def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None:
         self.answers = answers
         self.identity1 = convert_identity(answers, "identity1", "encounter1")
         self.identity2 = convert_identity(answers, "identity2", "encounter2")
@@ -131,7 +132,7 @@ class QueryDatabaseRules:
     next_column = "encounter1"
     next_label = "Next encounter"
 
-    def __init__(self, answers: pd.DataFrame) -> None:
+    def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None:
         self.answers = answers
         # Unknown database identities are distinguished by their encounters
         self.identity2 = convert_identity(answers, "identity2", "encounter2")
@@ -216,13 +217,18 @@ class ImageImageRules:
     next_column = "image_id1"
     next_label = "Next image"
 
-    def __init__(self, answers: pd.DataFrame) -> None:
+    def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None:
         self.answers = answers
         # The same pair of images may appear for multiple body parts and in both orders
-        image_ids = answers[["image_id1", "image_id2"]].astype(str)
-        image_id_min = image_ids.min(axis=1)
-        image_id_max = image_ids.max(axis=1)
-        self.pair = image_id_min + "_" + image_id_max
+        # image_id differs for each body part, so the images are identified by their paths
+        # index1 and index2 were computed by get_index when the answers were loaded
+        pairs = []
+        for index1, index2 in zip(answers["index1"], answers["index2"]):
+            path1 = query.metadata.loc[index1, "path"]
+            path2 = database.metadata.loc[index2, "path"]
+            path_min, path_max = sorted([path1, path2])
+            pairs.append(path_min + "|" + path_max)
+        self.pair = pd.Series(pairs, index=answers.index)
 
     def toggle_filter(self, idx: int, position: str) -> tuple[str, str]:
         # Toggle over the images of the encounter (column in metadata, value)

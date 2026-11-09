@@ -274,7 +274,7 @@ class App:
             self._update_i_lr(len(index), position)
 
     def _initialize_skipping(self):
-        self.rules = self.rules_cls(self.answers)
+        self.rules = self.rules_cls(self.answers, self.dataset.query, self.dataset.database)
 
     def _update_answer(self, answer_new: str) -> None:
         answer_old = self.answers.loc[self.idx, "answer"]
