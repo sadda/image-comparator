@@ -13,10 +13,6 @@ ANS_UNK = ""
 
 
 class MatchingRules(Protocol):
-    # Column used for jumping to the next group and the label of its button
-    next_column: str
-    next_label: str
-
     def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None: ...
 
     def toggle_filter(self, idx: int, position: str) -> tuple[str, str]: ...
@@ -31,9 +27,6 @@ class MatchingRules(Protocol):
 
 class QueryQueryRules:
     """Query encounters are matched with each other. "Same" answers merge encounters into clusters."""
-
-    next_column = "matching_part"
-    next_label = "Next body part"
 
     def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None:
         self.answers = answers
@@ -129,9 +122,6 @@ class QueryQueryRules:
 class QueryDatabaseRules:
     """Query encounters are matched with database identities. Each encounter has at most one identity."""
 
-    next_column = "encounter1"
-    next_label = "Next encounter"
-
     def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None:
         self.answers = answers
         # Unknown database identities are distinguished by their encounters
@@ -213,9 +203,6 @@ class QueryDatabaseRules:
 
 class ImageImageRules:
     """Images are matched with each other. An answer is valid only for its pair of images, not for their encounters or identities."""
-
-    next_column = "image_id1"
-    next_label = "Next image"
 
     def __init__(self, answers: pd.DataFrame, query: WildlifeDataset, database: WildlifeDataset) -> None:
         self.answers = answers

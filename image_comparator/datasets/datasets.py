@@ -14,6 +14,8 @@ from . import utils
 
 class WildlifeDataset:
     rules_cls: type[MatchingRules]
+    # Column used for jumping to the next group (None disables the button)
+    next_column: str | None = None
 
     def __init__(self) -> None:
         self.query: WD | None = None
@@ -39,6 +41,7 @@ class WildlifeDataset:
 
 class TurtlesOfSMSRC(WildlifeDataset):
     rules_cls = QueryQueryRules
+    next_column = "matching_part"
     dataset_wd = wildlife_datasets.datasets.TurtlesOfSMSRC
 
     def __init__(self, root: str, matching_encounters_path: str | None = None) -> None:
@@ -65,6 +68,7 @@ class TurtlesOfSMSRC(WildlifeDataset):
 
 class TurtlewatchEgypt(WildlifeDataset):
     rules_cls = QueryDatabaseRules
+    next_column = "encounter1"
     dataset_wd_query = wildlife_datasets.datasets.TurtlewatchEgypt_Citizen
 
     def __init__(
@@ -124,6 +128,7 @@ def _download_zip(url: str | None, root: str) -> None:
 
 class Identification(WildlifeDataset):
     rules_cls = QueryDatabaseRules
+    next_column = "encounter1"
 
     def __init__(self, root: str, url: str | None = None) -> None:
         self.root = root

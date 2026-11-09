@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 DATA_CSV = "verification_data.csv"
 ANS_CSV = "answers.csv"
+NEXT_LABELS = {"encounter1": "Next encounter", "matching_part": "Next body part"}
 CANVAS_SIZE = 400
 
 
@@ -100,11 +101,16 @@ class App:
             ("Unknown (E)", "e", self.on_unknown, 0, 2),
             ("Previous (A)", "a", self.on_prev, 1, 0),
             ("Next (S)", "s", self.on_next, 1, 1),
-            (self.rules_cls.next_label, None, self.next_group, 1, 2),
+            (self._next_label(), None, self.next_group, 1, 2),
             ("Toggle heads left (R)", "r", self.on_toggle_left, 2, 0),
             ("Toggle heads right (F)", "f", self.on_toggle_right, 2, 1),
             ("Reset (V)", "v", self.on_reset, 2, 2),
         ]
+
+    def _next_label(self) -> str:
+        if self.dataset.next_column is None:
+            return "Next group"
+        return NEXT_LABELS[self.dataset.next_column]
 
     def _build_ui(self) -> None:
         # Main container
@@ -158,7 +164,10 @@ class App:
         self.text_box.pack(fill="both", expand=True)
 
         for text, _, action, row, col in self._actions():
-            ttk.Button(self.btn_frame, text=text, command=action).grid(row=row, column=col)
+            button = ttk.Button(self.btn_frame, text=text, command=action)
+            button.grid(row=row, column=col)
+            if action == self.next_group and self.dataset.next_column is None:
+                button.state(["disabled"])
 
     def _close(self) -> None:
         self.closed = True
@@ -233,7 +242,9 @@ class App:
 
     def next_group(self) -> None:
         self.skip_filled = True
-        column = self.rules.next_column
+        column = self.dataset.next_column
+        if column is None:
+            return
         unique_values = self.answers[column].unique()
         i = np.where(self.answers.iloc[self.idx][column] == unique_values)[0][0]
         i = np.mod(i + 1, len(unique_values))
